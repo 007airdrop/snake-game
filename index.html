@@ -1,264 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Snake 2025 — Neon Ultra+</title>
-<style>
-  :root{
-    --white:#ffffff; --panel:#f8fff8;
-    --neon:#00b36b; --neon-2:#00cca0; --accent:#ffd166;
-    --text:#07331f; --muted:rgba(7,51,31,0.6);
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;}
-  body{
-    display:flex;align-items:center;justify-content:center;flex-direction:column;background:var(--white);
-    color:var(--text);overflow:hidden;padding:20px;
-  }
-  h1{color:var(--neon); text-shadow:0 0 10px rgba(0,179,107,0.18); margin:10px 0 14px 0}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake 2025 – Neon Ultra+</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; }
+    body {
+      background: #fff;
+      color: #00c06f;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    h1 { font-size: 2em; margin-bottom: 20px; text-shadow: 0 0 10px #00ff9d; }
 
-/* Layout */
-  #container{width:min(92vw,700px); max-width:100%; display:flex; gap:18px; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
-  #wrap{position:relative; width:min(88vw,540px);}
+    button {
+      background: rgba(0,255,153,0.1);
+      border: 1px solid #00c06f;
+      border-radius: 8px;
+      color: #00c06f;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      margin: 6px;
+      transition: 0.3s;
+    }
+    button:hover { background: #00c06f; color: white; box-shadow: 0 0 10px #00ff9d; }
 
-/* Canvas */
-  canvas{width:100%; height:auto; display:block; border-radius:12px;
-    box-shadow:0 12px 30px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.05);
-    background: linear-gradient(180deg,#ffffff,#f7fff7);}
+    #gameContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
 
-/* Panels */
-  .panel{background:var(--panel); padding:14px; border-radius:10px; border:1px solid rgba(7,51,31,0.06);
-    box-shadow:0 8px 30px rgba(7,51,31,0.04); color:var(--text);}
-  .menu{width:300px;}
-  .controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; justify-content:center}
-  button, select { background:#f0fff4; color:var(--text); border:1px solid rgba(0,179,107,0.12); padding:8px 12px; border-radius:8px; cursor:pointer; font-family:inherit; }
-  button:hover{transform:translateY(-2px); box-shadow:0 10px 20px rgba(0,179,107,0.06);}
+    canvas {
+      border: 2px solid #00ff99;
+      background: linear-gradient(to bottom, #ffffff, #f3fff8);
+      box-shadow: 0 0 10px #00ff9d;
+    }
 
-/* HUD */
-  #hud{display:flex; gap:10px; align-items:center; justify-content:space-between; width:100%; margin-top:12px}
-  #scoreBox{font-family:inherit; color:var(--text); font-size:1rem}
+    #scoreboard { margin-top: 10px; font-size: 1.1em; }
 
-/* Leaderboard list */
-  ol#leader{padding-left:18px; margin:8px 0}
-  ol#leader li{padding:6px 6px; border-bottom:1px dashed rgba(0,0,0,0.04)}
+    .menu, .gameover, .leaderboard {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.8s ease;
+    }
 
-/* overlays & vis */
-  .overlay{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:88%; max-width:420px; z-index:30}
-  .hidden{display:none}
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95);} to { opacity: 1; transform: scale(1);} }
 
-/* mobile small */
-  @media(max-width:520px){
-    .menu{width:100%}
-    #wrap{width:94vw}
-    .controls{gap:6px}
-  }
-
-/* small text */
-  .muted{font-size:12px;color:var(--muted); text-align:center; margin-top:8px}
-</style>
+    .hidden { display: none; }
+  </style>
 </head>
 <body>
-  <h1>Snake 2025 — Neon Ultra+</h1>
 
-  <div id="container">
-    <div id="wrap">
-      <canvas id="canvas" width="480" height="480"></canvas>
-
-      <!-- Start Menu (overlay) -->
-      <div class="overlay panel" id="menuPanel">
-        <h2 style="text-align:center;margin:0 0 6px 0">Play</h2>
-        <div style="text-align:center; font-size:0.95rem; color:var(--muted)">Choose difficulty & color, then start</div>
-
-        <div class="controls" style="margin-top:12px">
-          <div style="text-align:left">
-            <label style="display:block;margin-bottom:6px">Difficulty</label>
-            <select id="difficulty">
-              <option value="160">Easy</option>
-              <option value="110" selected>Medium</option>
-              <option value="70">Hard</option>
-            </select>
-          </div>
-
-          <div style="text-align:left">
-            <label style="display:block;margin-bottom:6px">Snake color</label>
-            <select id="snakeColor">
-              <option value="#00b36b">Neon Green</option>
-              <option value="#00b3b3">Cyan</option>
-              <option value="#e055aa">Magenta</option>
-              <option value="#ffb547">Amber</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="controls" style="margin-top:14px">
-          <button id="startBtn">▶️ Start Game</button>
-          <button id="leaderBtn">🏆 Leaderboard</button>
-          <button id="howBtn">❓ How to Play</button>
-        </div>
-
-        <div class="muted">Tip: Arrow keys (desktop) or swipe (mobile). Press P to pause.</div>
-      </div>
-
-      <!-- Leaderboard overlay -->
-      <div class="overlay panel hidden" id="leaderPanel">
-        <h2 style="text-align:center;margin:0 0 6px 0">Leaderboard</h2>
-        <ol id="leader"></ol>
-        <div class="controls" style="margin-top:10px; justify-content:center">
-          <button id="backBtn">Back</button>
-          <button id="clearBtn" title="Clear local leaderboard">Reset</button>
-        </div>
-      </div>
-
-      <!-- Game Over overlay -->
-      <div class="overlay panel hidden" id="overPanel">
-        <h2 style="text-align:center;margin:0 0 6px 0">Game Over</h2>
-        <div id="finalText" style="text-align:center; margin-bottom:8px"></div>
-        <div class="controls" style="justify-content:center">
-          <button id="replayBtn">🔁 Play Again</button>
-          <button id="homeBtn">🏠 Home</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- side menu panel -->
-    <div class="panel menu">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:700">Controls</div>
-        <div style="font-size:0.85rem;color:var(--muted)">White theme</div>
-      </div>
-
-      <div style="margin-top:10px">
-        <div style="display:flex; gap:8px; align-items:center">
-          <button id="pauseBtn">⏸ Pause</button>
-          <button id="musicBtn">🎵 Music: On</button>
-          <button id="muteBtn">🔈 Mute FX</button>
-        </div>
-
-        <div id="hud" style="margin-top:12px">
-          <div id="scoreBox">Score: 0 | High: 0</div>
-        </div>
-
-        <div style="margin-top:12px">
-          <div style="font-weight:600; margin-bottom:6px">About</div>
-          <div class="muted">Local leaderboard. Saved in your browser. Deploy to Vercel and paste the URL into Farcaster for a frame preview.</div>
-        </div>
-      </div>
-    </div>
+  <div id="menu" class="menu">
+    <h1>🐍 Snake 2025 – Neon Ultra+</h1>
+    <button onclick="startGame('easy')">Start Easy</button>
+    <button onclick="startGame('medium')">Start Medium</button>
+    <button onclick="startGame('hard')">Start Hard</button>
+    <button onclick="showLeaderboard()">Leaderboard</button>
+    <button onclick="alert('Use arrow keys / swipe to move. Eat to grow, avoid walls and yourself!')">How to Play</button>
   </div>
 
-  <div style="margin-top:12px" class="muted">Made for Farcaster / Base — static site on Vercel</div>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="scoreboard">Score: <span id="score">0</span> | High: <span id="highscore">0</span></div>
+    <button onclick="pauseGame()">Pause</button>
+    <button onclick="backToMenu()">Back to Menu</button>
+  </div>
 
-  <!-- Audio -->
-  <audio id="sfxEat" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.wav"></audio>
-  <audio id="sfxCrash" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.wav"></audio>
-  <audio id="sfxClick" src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.wav"></audio>
-  <audio id="bgMusic" loop src="https://assets.mixkit.co/music/preview/mixkit-80s-retrowave-1121.mp3"></audio>
+  <div id="leaderboard" class="leaderboard hidden">
+    <h1>🏆 Leaderboard</h1>
+    <ol id="scoreList"></ol>
+    <button onclick="backToMenu()">Back</button>
+  </div>
 
-<script>
-/* ----- Elements ----- */
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+  <audio id="eatSound" src="https://cdn.pixabay.com/download/audio/2021/09/27/audio_0bda39b855.mp3?filename=collectcoin-6075.mp3"></audio>
+  <audio id="crashSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4e3a7b7a4b.mp3?filename=error-126627.mp3"></audio>
 
-const menuPanel = document.getElementById('menuPanel');
-const leaderPanel = document.getElementById('leaderPanel');
-const overPanel = document.getElementById('overPanel');
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const eatSound = document.getElementById('eatSound');
+    const crashSound = document.getElementById('crashSound');
+    const scoreElem = document.getElementById('score');
+    const highElem = document.getElementById('highscore');
 
-const leaderEl = document.getElementById('leader');
-const finalText = document.getElementById('finalText');
+    let box = 20, snake, food, direction, score, speed, game, paused = false;
 
-const scoreBox = document.getElementById('scoreBox');
-const difficultyEl = document.getElementById('difficulty');
-const colorEl = document.getElementById('snakeColor');
+    function startGame(mode) {
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('leaderboard').classList.add('hidden');
+      document.getElementById('gameContainer').style.display = 'flex';
+      resetGame(mode);
+    }
 
-const sEat = document.getElementById('sfxEat');
-const sCrash = document.getElementById('sfxCrash');
-const sClick = document.getElementById('sfxClick');
-const bgMusic = document.getElementById('bgMusic');
+    function resetGame(mode) {
+      snake = [{x: 9*box, y:10*box}];
+      direction = null;
+      food = {x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box};
+      score = 0;
+      speed = mode === 'easy' ? 180 : mode === 'medium' ? 120 : 80;
+      if (game) clearInterval(game);
+      game = setInterval(draw, speed);
+    }
 
-const startBtn = document.getElementById('startBtn');
-const leaderBtn = document.getElementById('leaderBtn');
-const howBtn = document.getElementById('howBtn');
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
+      else if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
+      else if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+      else if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+    });
 
-const backBtn = document.getElementById('backBtn');
-const clearBtn = document.getElementById('clearBtn');
-const replayBtn = document.getElementById('replayBtn');
-const homeBtn = document.getElementById('homeBtn');
+    function draw() {
+      if (paused) return;
+      ctx.clearRect(0, 0, 400, 400);
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? '#00c06f' : 'rgba(0,192,111,0.3)';
+        ctx.shadowColor = '#00ff99';
+        ctx.shadowBlur = 10;
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+      }
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffb200';
+      ctx.beginPath();
+      ctx.arc(food.x + box/2, food.y + box/2, box/2 - 2, 0, Math.PI*2);
+      ctx.fill();
 
-const pauseBtn = document.getElementById('pauseBtn');
-const musicBtn = document.getElementById('musicBtn');
-const muteBtn = document.getElementById('muteBtn');
+      let headX = snake[0].x, headY = snake[0].y;
+      if (direction === 'LEFT') headX -= box;
+      if (direction === 'UP') headY -= box;
+      if (direction === 'RIGHT') headX += box;
+      if (direction === 'DOWN') headY += box;
 
-/* ----- State & settings ----- */
-let settings = {
-  color: localStorage.getItem('snake_color') || '#00b36b',
-  difficulty: localStorage.getItem('snake_diff') || '110',
-  musicOn: localStorage.getItem('snake_music') !== 'false',
-  fxOn: localStorage.getItem('snake_fx') !== 'false'
-};
-colorEl.value = settings.color;
-difficultyEl.value = settings.difficulty;
-bgMusic.volume = 0.35;
+      if (headX === food.x && headY === food.y) {
+        score++;
+        eatSound.play();
+        food = {x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box};
+      } else {
+        snake.pop();
+      }
 
-let grid = 24;
-let box = 20;
-let snake = [];
-let dir = null;
-let food = null;
-let score = 0;
-let highScore = Number(localStorage.getItem('snake_high') || 0);
-let leaderboard = JSON.parse(localStorage.getItem('snake_leader') || '[]');
-let running = false;
-let paused = false;
-let interval = Number(settings.difficulty || 110);
-let particles = [];
-let lastTime = 0;
-let accumulator = 0;
-let shake = 0;
+      const newHead = {x: headX, y: headY};
+      if (headX < 0 || headY < 0 || headX >= 400 || headY >= 400 || collision(newHead, snake)) {
+        crashSound.play();
+        clearInterval(game);
+        saveScore(score);
+        alert('💥 Game Over! Your score: ' + score);
+        backToMenu();
+      }
 
-/* responsive */
-function fitCanvas(){
-  canvas.width = 480; canvas.height = 480; box = Math.floor(canvas.width / grid);
-}
-fitCanvas(); window.addEventListener('resize', fitCanvas);
+      snake.unshift(newHead);
+      scoreElem.textContent = score;
+      let high = localStorage.getItem('highscore') || 0;
+      if (score > high) localStorage.setItem('highscore', score);
+      highElem.textContent = localStorage.getItem('highscore');
+    }
 
-/* util */
-function randGrid(){
-  const max = grid - 2;
-  return { x: (1 + Math.floor(Math.random()*max)) * box, y: (1 + Math.floor(Math.random()*max)) * box };
-}
-function saveSettings(){
-  localStorage.setItem('snake_color', colorEl.value);
-  localStorage.setItem('snake_diff', difficultyEl.value);
-  localStorage.setItem('snake_music', settings.musicOn ? 'true' : 'false');
-  localStorage.setItem('snake_fx', settings.fxOn ? 'true' : 'false');
-}
+    function collision(head, array) {
+      return array.some(s => s.x === head.x && s.y === head.y);
+    }
 
-/* sounds */
-function playFX(sound){
-  if(!settings.fxOn) return;
-  try{ sound.currentTime = 0; sound.play(); } catch(e){}
-}
-function toggleMusic(){
-  settings.musicOn = !settings.musicOn;
-  if(settings.musicOn) bgMusic.play(); else bgMusic.pause();
-  musicBtn.innerText = settings.musicOn ? '🎵 Music: On' : '🎵 Music: Off';
-  saveSettings();
-}
-function toggleFX(){
-  settings.fxOn = !settings.fxOn;
-  muteBtn.innerText = settings.fxOn ? '🔈 Mute FX' : '🔈 FX Off';
-  saveSettings();
-}
+    function pauseGame() { paused = !paused; }
 
-/* particles */
-function spawnParticle(x,y,color,life=700,count=8,speed=1.4){
-  for(let i=0;i<count;i++){
-    const a = Math.random()*Math.PI*2;
-    const sp = (Math.random()*0.6+0.4) * speed;
-    particles.push({ x:x+box/2, y:y+box/2, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, color, life, age:0, size:(Math.random()*3)+1 });
-  }
-}
-function updateParticles(dt){
-  for(let i=
+    function backToMenu() {
+      clearInterval(game);
+      document.getElementById('gameContainer').style.display = 'none';
+      document.getElementById('leaderboard').classList.add('hidden');
+      document.getElementById('menu').style.display = 'flex';
+    }
+
+    function saveScore(score) {
+      let scores = JSON.parse(localStorage.getItem('scores') || '[]');
+      scores.push(score);
+      scores.sort((a,b) => b - a);
+      localStorage.setItem('scores', JSON.stringify(scores.slice(0,10)));
+    }
+
+    function showLeaderboard() {
+      document.getElementById('menu').style.display = 'none';
+      const list = document.getElementById('scoreList');
+      list.innerHTML = '';
+      let scores = JSON.parse(localStorage.getItem('scores') || '[]');
+      scores.forEach((s, i) => {
+        const li = document.createElement('li');
+        li.textContent = `#${i+1}: ${s}`;
+        list.appendChild(li);
+      });
+      document.getElementById('leaderboard').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
