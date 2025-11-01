@@ -1,0 +1,4 @@
+<meta property="og:image" content="/frame.png" />
+<meta name="fc:frame" content="vNext" />
+<meta name="fc:frame:button:1" content="Play" />
+<meta name="fc:frame:post_url" content="https://your-vercel-url/" />
