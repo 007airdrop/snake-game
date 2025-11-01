@@ -1,224 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake 2025 – White PRO Edition</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Snake 2025 — Neon Ultra+</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    height: 100vh;
-    background: #fff;
-    color: #00994d;
-    font-family: 'Courier New', monospace;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
+  :root{
+    --white:#ffffff; --panel:#f8fff8;
+    --neon:#00b36b; --neon-2:#00cca0; --accent:#ffd166;
+    --text:#07331f; --muted:rgba(7,51,31,0.6);
   }
-  h1 {
-    font-size: 2rem;
-    text-shadow: 0 0 8px #00cc66;
-    margin-bottom: 15px;
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;}
+  body{
+    display:flex;align-items:center;justify-content:center;flex-direction:column;background:var(--white);
+    color:var(--text);overflow:hidden;padding:20px;
   }
-  canvas {
-    background: linear-gradient(180deg, #ffffff, #f5fff5);
-    border: 2px solid #00cc66;
-    border-radius: 16px;
-    box-shadow: 0 0 25px rgba(0, 255, 128, 0.1);
+  h1{color:var(--neon); text-shadow:0 0 10px rgba(0,179,107,0.18); margin:10px 0 14px 0}
+
+/* Layout */
+  #container{width:min(92vw,700px); max-width:100%; display:flex; gap:18px; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
+  #wrap{position:relative; width:min(88vw,540px);}
+
+/* Canvas */
+  canvas{width:100%; height:auto; display:block; border-radius:12px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.05);
+    background: linear-gradient(180deg,#ffffff,#f7fff7);}
+
+/* Panels */
+  .panel{background:var(--panel); padding:14px; border-radius:10px; border:1px solid rgba(7,51,31,0.06);
+    box-shadow:0 8px 30px rgba(7,51,31,0.04); color:var(--text);}
+  .menu{width:300px;}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; justify-content:center}
+  button, select { background:#f0fff4; color:var(--text); border:1px solid rgba(0,179,107,0.12); padding:8px 12px; border-radius:8px; cursor:pointer; font-family:inherit; }
+  button:hover{transform:translateY(-2px); box-shadow:0 10px 20px rgba(0,179,107,0.06);}
+
+/* HUD */
+  #hud{display:flex; gap:10px; align-items:center; justify-content:space-between; width:100%; margin-top:12px}
+  #scoreBox{font-family:inherit; color:var(--text); font-size:1rem}
+
+/* Leaderboard list */
+  ol#leader{padding-left:18px; margin:8px 0}
+  ol#leader li{padding:6px 6px; border-bottom:1px dashed rgba(0,0,0,0.04)}
+
+/* overlays & vis */
+  .overlay{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:88%; max-width:420px; z-index:30}
+  .hidden{display:none}
+
+/* mobile small */
+  @media(max-width:520px){
+    .menu{width:100%}
+    #wrap{width:94vw}
+    .controls{gap:6px}
   }
-  #scoreDisplay {
-    margin-top: 10px;
-    font-size: 1rem;
-    text-shadow: 0 0 5px #bfffd6;
-  }
-  button {
-    background: #e9fff0;
-    color: #00aa55;
-    border: 1px solid #00cc66;
-    padding: 8px 14px;
-    font-size: 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 5px;
-    box-shadow: 0 0 6px rgba(0, 255, 128, 0.15);
-    transition: 0.2s;
-  }
-  button:hover {
-    background: #00cc66;
-    color: white;
-  }
-  footer {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #00994d;
-    opacity: 0.7;
-  }
+
+/* small text */
+  .muted{font-size:12px;color:var(--muted); text-align:center; margin-top:8px}
 </style>
 </head>
 <body>
-  <h1>Snake 2025 – Neon PRO</h1>
-  <canvas id="game" width="400" height="400"></canvas>
-  <div id="scoreDisplay">Score: 0 | High: 0</div>
-  <div>
-    <button id="pauseBtn">Pause</button>
-    <button id="musicBtn">Music: On</button>
-    <button id="fxBtn">Mute FX</button>
-  </div>
-  <footer>Made for Farcaster / Base — deploy on Vercel (static)</footer>
+  <h1>Snake 2025 — Neon Ultra+</h1>
 
-  <audio id="eatSound" src="https://assets.mixkit.co/sfx/download/mixkit-retro-game-notification-212.wav"></audio>
-  <audio id="crashSound" src="https://assets.mixkit.co/sfx/download/mixkit-player-losing-or-failing-2042.wav"></audio>
-  <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2023/06/07/audio_b2d7ab99f0.mp3?filename=chiptune-arcade-148811.mp3" loop></audio>
+  <div id="container">
+    <div id="wrap">
+      <canvas id="canvas" width="480" height="480"></canvas>
+
+      <!-- Start Menu (overlay) -->
+      <div class="overlay panel" id="menuPanel">
+        <h2 style="text-align:center;margin:0 0 6px 0">Play</h2>
+        <div style="text-align:center; font-size:0.95rem; color:var(--muted)">Choose difficulty & color, then start</div>
+
+        <div class="controls" style="margin-top:12px">
+          <div style="text-align:left">
+            <label style="display:block;margin-bottom:6px">Difficulty</label>
+            <select id="difficulty">
+              <option value="160">Easy</option>
+              <option value="110" selected>Medium</option>
+              <option value="70">Hard</option>
+            </select>
+          </div>
+
+          <div style="text-align:left">
+            <label style="display:block;margin-bottom:6px">Snake color</label>
+            <select id="snakeColor">
+              <option value="#00b36b">Neon Green</option>
+              <option value="#00b3b3">Cyan</option>
+              <option value="#e055aa">Magenta</option>
+              <option value="#ffb547">Amber</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="controls" style="margin-top:14px">
+          <button id="startBtn">▶️ Start Game</button>
+          <button id="leaderBtn">🏆 Leaderboard</button>
+          <button id="howBtn">❓ How to Play</button>
+        </div>
+
+        <div class="muted">Tip: Arrow keys (desktop) or swipe (mobile). Press P to pause.</div>
+      </div>
+
+      <!-- Leaderboard overlay -->
+      <div class="overlay panel hidden" id="leaderPanel">
+        <h2 style="text-align:center;margin:0 0 6px 0">Leaderboard</h2>
+        <ol id="leader"></ol>
+        <div class="controls" style="margin-top:10px; justify-content:center">
+          <button id="backBtn">Back</button>
+          <button id="clearBtn" title="Clear local leaderboard">Reset</button>
+        </div>
+      </div>
+
+      <!-- Game Over overlay -->
+      <div class="overlay panel hidden" id="overPanel">
+        <h2 style="text-align:center;margin:0 0 6px 0">Game Over</h2>
+        <div id="finalText" style="text-align:center; margin-bottom:8px"></div>
+        <div class="controls" style="justify-content:center">
+          <button id="replayBtn">🔁 Play Again</button>
+          <button id="homeBtn">🏠 Home</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- side menu panel -->
+    <div class="panel menu">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700">Controls</div>
+        <div style="font-size:0.85rem;color:var(--muted)">White theme</div>
+      </div>
+
+      <div style="margin-top:10px">
+        <div style="display:flex; gap:8px; align-items:center">
+          <button id="pauseBtn">⏸ Pause</button>
+          <button id="musicBtn">🎵 Music: On</button>
+          <button id="muteBtn">🔈 Mute FX</button>
+        </div>
+
+        <div id="hud" style="margin-top:12px">
+          <div id="scoreBox">Score: 0 | High: 0</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:600; margin-bottom:6px">About</div>
+          <div class="muted">Local leaderboard. Saved in your browser. Deploy to Vercel and paste the URL into Farcaster for a frame preview.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:12px" class="muted">Made for Farcaster / Base — static site on Vercel</div>
+
+  <!-- Audio -->
+  <audio id="sfxEat" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.wav"></audio>
+  <audio id="sfxCrash" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.wav"></audio>
+  <audio id="sfxClick" src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.wav"></audio>
+  <audio id="bgMusic" loop src="https://assets.mixkit.co/music/preview/mixkit-80s-retrowave-1121.mp3"></audio>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const eatSound = document.getElementById("eatSound");
-const crashSound = document.getElementById("crashSound");
-const bgMusic = document.getElementById("bgMusic");
-const scoreDisplay = document.getElementById("scoreDisplay");
+/* ----- Elements ----- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
+const menuPanel = document.getElementById('menuPanel');
+const leaderPanel = document.getElementById('leaderPanel');
+const overPanel = document.getElementById('overPanel');
+
+const leaderEl = document.getElementById('leader');
+const finalText = document.getElementById('finalText');
+
+const scoreBox = document.getElementById('scoreBox');
+const difficultyEl = document.getElementById('difficulty');
+const colorEl = document.getElementById('snakeColor');
+
+const sEat = document.getElementById('sfxEat');
+const sCrash = document.getElementById('sfxCrash');
+const sClick = document.getElementById('sfxClick');
+const bgMusic = document.getElementById('bgMusic');
+
+const startBtn = document.getElementById('startBtn');
+const leaderBtn = document.getElementById('leaderBtn');
+const howBtn = document.getElementById('howBtn');
+
+const backBtn = document.getElementById('backBtn');
+const clearBtn = document.getElementById('clearBtn');
+const replayBtn = document.getElementById('replayBtn');
+const homeBtn = document.getElementById('homeBtn');
+
+const pauseBtn = document.getElementById('pauseBtn');
+const musicBtn = document.getElementById('musicBtn');
+const muteBtn = document.getElementById('muteBtn');
+
+/* ----- State & settings ----- */
+let settings = {
+  color: localStorage.getItem('snake_color') || '#00b36b',
+  difficulty: localStorage.getItem('snake_diff') || '110',
+  musicOn: localStorage.getItem('snake_music') !== 'false',
+  fxOn: localStorage.getItem('snake_fx') !== 'false'
+};
+colorEl.value = settings.color;
+difficultyEl.value = settings.difficulty;
+bgMusic.volume = 0.35;
+
+let grid = 24;
 let box = 20;
-let snake = [{x:10*box, y:10*box}];
-let direction = null;
-let food = randomFood();
+let snake = [];
+let dir = null;
+let food = null;
 let score = 0;
-let highScore = localStorage.getItem("snakeHighScore") || 0;
-let speed = 120;
-let game;
-let isPaused = false;
-let musicOn = true;
-let fxOn = true;
+let highScore = Number(localStorage.getItem('snake_high') || 0);
+let leaderboard = JSON.parse(localStorage.getItem('snake_leader') || '[]');
+let running = false;
+let paused = false;
+let interval = Number(settings.difficulty || 110);
+let particles = [];
+let lastTime = 0;
+let accumulator = 0;
+let shake = 0;
 
-bgMusic.volume = 0.3;
-bgMusic.play();
+/* responsive */
+function fitCanvas(){
+  canvas.width = 480; canvas.height = 480; box = Math.floor(canvas.width / grid);
+}
+fitCanvas(); window.addEventListener('resize', fitCanvas);
 
-function randomFood() {
-  return {
-    x: Math.floor(Math.random() * 19 + 1) * box,
-    y: Math.floor(Math.random() * 19 + 1) * box
-  };
+/* util */
+function randGrid(){
+  const max = grid - 2;
+  return { x: (1 + Math.floor(Math.random()*max)) * box, y: (1 + Math.floor(Math.random()*max)) * box };
+}
+function saveSettings(){
+  localStorage.setItem('snake_color', colorEl.value);
+  localStorage.setItem('snake_diff', difficultyEl.value);
+  localStorage.setItem('snake_music', settings.musicOn ? 'true' : 'false');
+  localStorage.setItem('snake_fx', settings.fxOn ? 'true' : 'false');
 }
 
-function drawCell(x, y, color, alpha=1) {
-  ctx.fillStyle = color;
-  ctx.globalAlpha = alpha;
-  ctx.shadowBlur = 10;
-  ctx.shadowColor = color;
-  ctx.fillRect(x+1, y+1, box-2, box-2);
-  ctx.shadowBlur = 0;
-  ctx.globalAlpha = 1;
+/* sounds */
+function playFX(sound){
+  if(!settings.fxOn) return;
+  try{ sound.currentTime = 0; sound.play(); } catch(e){}
+}
+function toggleMusic(){
+  settings.musicOn = !settings.musicOn;
+  if(settings.musicOn) bgMusic.play(); else bgMusic.pause();
+  musicBtn.innerText = settings.musicOn ? '🎵 Music: On' : '🎵 Music: Off';
+  saveSettings();
+}
+function toggleFX(){
+  settings.fxOn = !settings.fxOn;
+  muteBtn.innerText = settings.fxOn ? '🔈 Mute FX' : '🔈 FX Off';
+  saveSettings();
 }
 
-function drawGrid() {
-  ctx.strokeStyle = "rgba(0,200,100,0.05)";
-  for(let i=0;i<canvas.width;i+=box){
-    ctx.beginPath();
-    ctx.moveTo(i,0);
-    ctx.lineTo(i,canvas.height);
-    ctx.stroke();
-  }
-  for(let i=0;i<canvas.height;i+=box){
-    ctx.beginPath();
-    ctx.moveTo(0,i);
-    ctx.lineTo(canvas.width,i);
-    ctx.stroke();
+/* particles */
+function spawnParticle(x,y,color,life=700,count=8,speed=1.4){
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const sp = (Math.random()*0.6+0.4) * speed;
+    particles.push({ x:x+box/2, y:y+box/2, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, color, life, age:0, size:(Math.random()*3)+1 });
   }
 }
-
-function draw() {
-  if(isPaused) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
-
-  // Draw snake trail
-  for(let i = 0; i < snake.length; i++) {
-    const alpha = 1 - (i / (snake.length * 1.2));
-    drawCell(snake[i].x, snake[i].y, "#00cc66", alpha);
-  }
-
-  // Food
-  drawCell(food.x, food.y, "#ffbb00");
-
-  // Move
-  let snakeX = snake[0].x;
-  let snakeY = snake[0].y;
-  if(direction === "LEFT") snakeX -= box;
-  if(direction === "UP") snakeY -= box;
-  if(direction === "RIGHT") snakeX += box;
-  if(direction === "DOWN") snakeY += box;
-
-  if(snakeX === food.x && snakeY === food.y) {
-    if(fxOn) eatSound.play();
-    score++;
-    food = randomFood();
-    if(speed > 50) speed -= 2;
-    clearInterval(game);
-    game = setInterval(draw, speed);
-  } else {
-    snake.pop();
-  }
-
-  let newHead = {x: snakeX, y: snakeY};
-  if(
-    snakeX < 0 || snakeY < 0 ||
-    snakeX >= canvas.width || snakeY >= canvas.height ||
-    collision(newHead, snake)
-  ){
-    if(fxOn) crashSound.play();
-    clearInterval(game);
-    setTimeout(()=>resetGame(), 700);
-    return;
-  }
-
-  snake.unshift(newHead);
-
-  if(score > highScore){
-    highScore = score;
-    localStorage.setItem("snakeHighScore", highScore);
-  }
-
-  scoreDisplay.innerHTML = `Score: ${score} | High: ${highScore}`;
-}
-
-function collision(head, arr){
-  return arr.some(p => p.x === head.x && p.y === head.y);
-}
-
-document.addEventListener("keydown", e=>{
-  if(e.keyCode==37 && direction!=="RIGHT") direction="LEFT";
-  else if(e.keyCode==38 && direction!=="DOWN") direction="UP";
-  else if(e.keyCode==39 && direction!=="LEFT") direction="RIGHT";
-  else if(e.keyCode==40 && direction!=="UP") direction="DOWN";
-});
-
-function resetGame(){
-  snake = [{x:10*box, y:10*box}];
-  direction = null;
-  score = 0;
-  speed = 120;
-  food = randomFood();
-  game = setInterval(draw, speed);
-}
-
-document.getElementById("pauseBtn").onclick = ()=>{
-  isPaused = !isPaused;
-  document.getElementById("pauseBtn").innerText = isPaused ? "Resume" : "Pause";
-};
-
-document.getElementById("musicBtn").onclick = ()=>{
-  musicOn = !musicOn;
-  if(musicOn) bgMusic.play(); else bgMusic.pause();
-  document.getElementById("musicBtn").innerText = musicOn ? "Music: On" : "Music: Off";
-};
-
-document.getElementById("fxBtn").onclick = ()=>{
-  fxOn = !fxOn;
-  document.getElementById("fxBtn").innerText = fxOn ? "Mute FX" : "FX: Off";
-};
-
-game = setInterval(draw, speed);
-</script>
-</body>
-</html>
+function updateParticles(dt){
+  for(let i=
