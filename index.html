@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nokia Snake 🐍</title>
+    <style>
+      body {
+        background-color: #000;
+        color: #00ff00;
+        font-family: monospace;
+        text-align: center;
+        margin: 0;
+        padding: 20px;
+      }
+
+      h1 {
+        color: #00ff00;
+      }
+
+      canvas {
+        background-color: #001a00;
+        border: 3px solid #00ff00;
+        display: block;
+        margin: 20px auto;
+      }
+
+      #score {
+        font-size: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>🐍 Classic Nokia Snake Game</h1>
+    <canvas id="game" width="400" height="400"></canvas>
+    <p id="score">Score: 0</p>
+
+    <script>
+      const canvas = document.getElementById("game");
