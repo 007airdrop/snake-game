@@ -1,193 +1,606 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Retro Snake Game</title>
-  <style>
-    body {
-      background: radial-gradient(circle at center, #001900 0%, #000 100%);
-      color: #0f0;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Snake 2025 — Neon PRO</title>
+<style>
+  :root{
+    --bg-1:#001200; --bg-2:#000;
+    --neon:#00ff66; --neon-dim:#009933; --accent:#ffff66;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;}
+  body{
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    background: radial-gradient(circle at 50% 30%, rgba(0,40,20,0.6), rgba(0,0,0,1) 60%);
+    color:var(--neon); overflow:hidden;
+  }
 
-    h1 {
-      text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
-      margin-bottom: 20px;
-    }
+  h1{color:var(--neon); text-shadow:0 0 15px var(--neon); margin:12px 0}
 
-    button, select {
-      background-color: #001900;
-      color: #0f0;
-      border: 2px solid #0f0;
-      padding: 10px 20px;
-      font-size: 16px;
-      font-family: monospace;
-      cursor: pointer;
-      margin-top: 10px;
-      text-shadow: 0 0 5px #0f0;
-      box-shadow: 0 0 10px #0f0;
-      transition: 0.2s;
-    }
+/* Canvas */
+  #wrap{position:relative; width:min(92vw,540px); margin:6px auto;}
+  canvas{width:100%; height:auto; display:block; border-radius:8px;
+    box-shadow:0 0 30px rgba(0,255,102,0.12), inset 0 0 12px rgba(0,255,102,0.03);
+    border:2px solid rgba(0,255,102,0.08);
+    background:linear-gradient(#001400,#000);}
 
-    button:hover, select:hover {
-      background-color: #003000;
-      box-shadow: 0 0 20px #0f0;
-    }
+/* overlays */
+  .panel{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:rgba(0,20,0,0.86); border:2px solid rgba(0,255,102,0.12);
+    box-shadow:0 0 30px rgba(0,255,102,0.06); padding:18px; border-radius:10px;
+    color:var(--neon); width:92%;
+  }
+  .panel h2{margin:0 0 10px 0}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px}
+  select,input[type=text]{background:#001900; border:1px solid var(--neon); color:var(--neon); padding:8px; border-radius:6px; font-family:inherit}
+  button{background:#001900; color:var(--neon); border:1px solid var(--neon); padding:8px 12px; border-radius:6px; cursor:pointer}
+  button:hover{transform:translateY(-2px); box-shadow:0 0 12px rgba(0,255,102,0.08)}
+  label{font-size:0.9rem; margin-right:6px}
 
-    canvas {
-      border: 3px solid #0f0;
-      background-color: #000;
-      display: none;
-      box-shadow: 0 0 20px #0f0;
-    }
+/* top HUD */
+  #hud{display:flex; gap:10px; align-items:center; width:100%; justify-content:space-between; margin-top:10px; padding:0 6px; width:min(92vw,540px)}
+  #scoreBox{font-size:1rem; color:var(--neon)}
+  #controlsRight{display:flex;gap:8px;align-items:center}
 
-    #score {
-      margin-top: 10px;
-      color: #0f0;
-      font-size: 22px;
-      text-shadow: 0 0 8px #0f0;
-      display: none;
-    }
+/* leaderboard */
+  ul#leader{list-style:none; margin:8px 0; padding:0; text-align:left}
+  ul#leader li{padding:6px 8px; border-bottom:1px dashed rgba(0,255,102,0.06)}
+  .small{font-size:0.9rem; color:#bfffb2}
 
-    #home {
-      text-align: center;
-    }
-  </style>
+/* footer / small text */
+  .muted{font-size:0.8rem; color:rgba(0,255,102,0.5); margin-top:8px}
+
+/* responsive tweaks */
+  @media (max-width:420px){
+    .panel{width:94%}
+    #wrap{width:94vw}
+    button, select {padding:8px; font-size:14px}
+  }
+</style>
 </head>
 <body>
-  <div id="home">
-    <h1>💫 3D Retro Snake Game</h1>
-    <label for="mode">Select Difficulty:</label><br>
-    <select id="mode">
-      <option value="150">Easy</option>
-      <option value="100">Medium</option>
-      <option value="60">Hard</option>
-    </select><br>
-    <button onclick="startGame()">Start Game</button>
+  <h1>Snake 2025 — Neon PRO</h1>
+
+  <div id="wrap">
+    <canvas id="canvas" width="480" height="480"></canvas>
+
+    <!-- Main Menu -->
+    <div class="panel" id="menuPanel" style="display:block">
+      <h2>Play</h2>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center">
+        <label>Player:</label>
+        <input id="playerName" type="text" placeholder="Your name" maxlength="18" />
+      </div>
+
+      <div class="controls" style="justify-content:center;margin-top:12px">
+        <div>
+          <label>Difficulty</label><br>
+          <select id="difficulty">
+            <option value="140">Easy</option>
+            <option value="100" selected>Medium</option>
+            <option value="60">Hard</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Snake color</label><br>
+          <select id="snakeColor">
+            <option value="#00ff66">Neon Green</option>
+            <option value="#66ffff">Cyan</option>
+            <option value="#ff66ff">Magenta</option>
+            <option value="#ffd166">Amber</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:14px; justify-content:center">
+        <button id="startBtn">Start</button>
+        <button id="howBtn">How to Play</button>
+        <button id="leaderBtn">Leaderboard</button>
+      </div>
+
+      <div style="text-align:center" class="muted">Tip: Use keyboard arrows or swipe on mobile</div>
+    </div>
+
+    <!-- Leaderboard panel -->
+    <div class="panel" id="leaderPanel" style="display:none">
+      <h2>Leaderboard</h2>
+      <ol id="leader" style="padding-left:18px"></ol>
+      <div class="controls" style="justify-content:center">
+        <button id="backFromLeader">Back</button>
+        <button id="clearLeader" title="Reset local leaderboard">Reset</button>
+      </div>
+    </div>
+
+    <!-- Game Over panel -->
+    <div class="panel" id="overPanel" style="display:none">
+      <h2>Game Over</h2>
+      <p id="finalText"></p>
+      <div class="controls" style="justify-content:center">
+        <button id="replayBtn">Play Again</button>
+        <button id="homeBtn">Home</button>
+      </div>
+    </div>
+
   </div>
 
-  <canvas id="gameCanvas" width="400" height="400"></canvas>
-  <div id="score">Score: 0</div>
+  <div id="hud">
+    <div id="scoreBox">Score: 0 | High: 0</div>
+    <div id="controlsRight">
+      <button id="pauseBtn">Pause</button>
+      <button id="musicBtn">Music: On</button>
+      <button id="muteBtn">Mute FX</button>
+    </div>
+  </div>
 
-  <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const home = document.getElementById("home");
-    const scoreDisplay = document.getElementById("score");
-    const modeSelect = document.getElementById("mode");
+  <div class="muted">Made for Farcaster / Base — deploy on Vercel (static)</div>
 
-    const box = 20;
-    let snake = [];
-    let direction = null;
-    let score = 0;
-    let food;
-    let game;
-    let speed = 120;
+  <!-- Audio assets (external URLs) -->
+  <audio id="sfxEat" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.wav"></audio>
+  <audio id="sfxCrash" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.wav"></audio>
+  <audio id="sfxClick" src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.wav"></audio>
+  <audio id="bgMusic" loop src="https://assets.mixkit.co/music/preview/mixkit-80s-retrowave-1121.mp3"></audio>
 
-    function startGame() {
-      home.style.display = "none";
-      canvas.style.display = "block";
-      scoreDisplay.style.display = "block";
+<script>
+/* -------------------------
+   Utility & persistent state
+   ------------------------- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const menuPanel = document.getElementById('menuPanel');
+const leaderPanel = document.getElementById('leaderPanel');
+const overPanel = document.getElementById('overPanel');
+const scoreBox = document.getElementById('scoreBox');
 
-      speed = parseInt(modeSelect.value);
-      snake = [{ x: 9 * box, y: 10 * box }];
-      direction = null;
-      score = 0;
-      food = randomFood();
+const playerNameEl = document.getElementById('playerName');
+const difficultyEl = document.getElementById('difficulty');
+const colorEl = document.getElementById('snakeColor');
 
-      document.addEventListener("keydown", setDirection);
-      clearInterval(game);
-      game = setInterval(draw, speed);
-    }
+const sEat = document.getElementById('sfxEat');
+const sCrash = document.getElementById('sfxCrash');
+const sClick = document.getElementById('sfxClick');
+const bgMusic = document.getElementById('bgMusic');
 
-    function randomFood() {
-      return {
-        x: Math.floor(Math.random() * 19 + 1) * box,
-        y: Math.floor(Math.random() * 19 + 1) * box
-      };
-    }
+const startBtn = document.getElementById('startBtn');
+const howBtn = document.getElementById('howBtn');
+const leaderBtn = document.getElementById('leaderBtn');
+const backFromLeader = document.getElementById('backFromLeader');
+const clearLeader = document.getElementById('clearLeader');
+const replayBtn = document.getElementById('replayBtn');
+const homeBtn = document.getElementById('homeBtn');
 
-    function setDirection(event) {
-      if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-      else if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-      else if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
-      else if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
-    }
+const pauseBtn = document.getElementById('pauseBtn');
+const musicBtn = document.getElementById('musicBtn');
+const muteBtn = document.getElementById('muteBtn');
 
-    function draw() {
-      // background glow
-      const gradient = ctx.createRadialGradient(200, 200, 50, 200, 200, 250);
-      gradient.addColorStop(0, "#001900");
-      gradient.addColorStop(1, "#000");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 400, 400);
+const leaderListEl = document.getElementById('leader');
 
-      // draw snake with glow + fake 3D
-      for (let i = 0; i < snake.length; i++) {
-        const headGlow = i === 0 ? "#0f0" : "#00aa00";
-        ctx.shadowColor = "#0f0";
-        ctx.shadowBlur = i === 0 ? 20 : 10;
-        ctx.fillStyle = headGlow;
-        ctx.fillRect(snake[i].x, snake[i].y, box, box);
-        ctx.strokeStyle = "#003300";
-        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
-      }
+let settings = {
+  name: localStorage.getItem('snake_name') || '',
+  color: localStorage.getItem('snake_color') || '#00ff66',
+  difficulty: localStorage.getItem('snake_diff') || '100',
+  musicOn: localStorage.getItem('snake_music') !== 'false',
+  fxOn: localStorage.getItem('snake_fx') !== 'false',
+};
 
-      // draw food with glowing orb
-      ctx.shadowColor = "#0f0";
-      ctx.shadowBlur = 25;
-      ctx.beginPath();
-      ctx.arc(food.x + box / 2, food.y + box / 2, box / 2, 0, 2 * Math.PI);
-      ctx.fillStyle = "#00ff00";
-      ctx.fill();
+playerNameEl.value = settings.name;
+colorEl.value = settings.color;
+difficultyEl.value = settings.difficulty;
+bgMusic.volume = 0.45;
 
-      let snakeX = snake[0].x;
-      let snakeY = snake[0].y;
+let grid = 24;         // grid dimension (box size divisor)
+let box = 20;          // will compute from canvas size
+let scale = 1;         // for responsiveness
+let snake = [];
+let dir = null;
+let food = null;
+let score = 0;
+let highScore = Number(localStorage.getItem('snake_high') || 0);
+let leaderboard = JSON.parse(localStorage.getItem('snake_leader') || '[]');
+let running = false;
+let paused = false;
+let lastTime = 0;
+let accumulator = 0;
+let interval = Number(settings.difficulty || 100); // ms per step
+let particles = [];
+let shake = 0;
 
-      if (direction === "LEFT") snakeX -= box;
-      if (direction === "UP") snakeY -= box;
-      if (direction === "RIGHT") snakeX += box;
-      if (direction === "DOWN") snakeY += box;
+/* responsive canvas sizing */
+function fitCanvas(){
+  const wrap = document.getElementById('wrap');
+  const w = wrap.clientWidth;
+  canvas.width = 480; // logical resolution (keeps grid consistent)
+  canvas.height = 480;
+  // scale for display handled by CSS; box remains fixed to logical size
+  box = Math.floor(canvas.width / grid);
+}
+fitCanvas();
+window.addEventListener('resize', fitCanvas);
 
-      if (snakeX === food.x && snakeY === food.y) {
-        score++;
-        scoreDisplay.innerText = "Score: " + score;
-        food = randomFood();
-      } else {
-        snake.pop();
-      }
+/* -------------------------
+   Helpers
+   ------------------------- */
+function randGrid(){
+  const max = grid - 2;
+  return {
+    x: (1 + Math.floor(Math.random()*max)) * box,
+    y: (1 + Math.floor(Math.random()*max)) * box
+  };
+}
 
-      const newHead = { x: snakeX, y: snakeY };
+function saveSettings(){
+  localStorage.setItem('snake_name', playerNameEl.value.trim());
+  localStorage.setItem('snake_color', colorEl.value);
+  localStorage.setItem('snake_diff', difficultyEl.value);
+  localStorage.setItem('snake_music', settings.musicOn ? 'true' : 'false');
+  localStorage.setItem('snake_fx', settings.fxOn ? 'true' : 'false');
+}
 
-      if (
-        snakeX < 0 || snakeY < 0 ||
-        snakeX >= 400 || snakeY >= 400 ||
-        collision(newHead, snake)
-      ) {
-        clearInterval(game);
-        alert("💀 Game Over!\nFinal Score: " + score);
-        resetGame();
-      }
+/* -------------------------
+   Sound & music toggles
+   ------------------------- */
+function playFX(sound){
+  if(!settings.fxOn) return;
+  try{ sound.currentTime = 0; sound.play(); } catch(e){}
+}
+function toggleMusic(){
+  settings.musicOn = !settings.musicOn;
+  if(settings.musicOn) bgMusic.play(); else bgMusic.pause();
+  musicBtn.innerText = settings.musicOn ? 'Music: On' : 'Music: Off';
+  saveSettings();
+}
+function toggleFX(){
+  settings.fxOn = !settings.fxOn;
+  muteBtn.innerText = settings.fxOn ? 'Mute FX' : 'FX: Off';
+  saveSettings();
+}
 
-      snake.unshift(newHead);
-    }
+/* -------------------------
+   Leaderboard
+   ------------------------- */
+function showLeaderboard(){
+  leaderListEl.innerHTML = '';
+  const list = leaderboard.slice(0,5);
+  if(list.length===0){
+    leaderListEl.innerHTML = '<li class="small">No scores yet. Play to add!</li>';
+  }else{
+    list.forEach((r, i) => {
+      leaderListEl.innerHTML += `<li>${i+1}. <strong>${escapeHtml(r.name)}</strong> - ${r.score}</li>`;
+    });
+  }
+  leaderPanel.style.display = 'block';
+  menuPanel.style.display = 'none';
+  overPanel.style.display = 'none';
+}
 
-    function collision(head, array) {
-      return array.some(segment => segment.x === head.x && segment.y === head.y);
-    }
+function pushLeader(name, score){
+  leaderboard.push({name,nameLower:name.toLowerCase(),score:score,ts:Date.now()});
+  leaderboard.sort((a,b)=>b.score - a.score || a.ts - b.ts);
+  leaderboard = leaderboard.slice(0, 20);
+  localStorage.setItem('snake_leader', JSON.stringify(leaderboard));
+}
 
-    function resetGame() {
-      canvas.style.display = "none";
-      scoreDisplay.style.display = "none";
-      home.style.display = "block";
-    }
-  </script>
+/* small escape to avoid injection in displayed text */
+function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* -------------------------
+   Particles - trail & explode
+   ------------------------- */
+function spawnParticle(x,y,color,life=600, count=8, speed=1.2){
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const sp = (Math.random()*0.6+0.4) * speed;
+    particles.push({
+      x:x+box/2, y:y+box/2,
+      vx: Math.cos(a)*sp, vy: Math.sin(a)*sp,
+      color, life, age:0, size: (Math.random()*3)+1
+    });
+  }
+}
+
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.age += dt;
+    p.x += p.vx * (dt/16);
+    p.y += p.vy * (dt/16) + 0.02*(dt/16);
+    if(p.age>p.life) particles.splice(i,1);
+  }
+}
+function drawParticles(){
+  ctx.save();
+  particles.forEach(p=>{
+    const alpha = 1 - p.age/p.life;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+/* -------------------------
+   Game core
+   ------------------------- */
+function resetState(){
+  snake = [{x:10*box,y:10*box}];
+  dir = null;
+  food = randGrid();
+  score = 0;
+  interval = Number(difficultyEl.value);
+  settings.name = playerNameEl.value.trim() || 'Player';
+  saveSettings();
+  running = true;
+  paused = false;
+  particles = [];
+  shake = 0;
+}
+
+function step(){
+  if(!running || paused) return;
+  let head = {...snake[0]};
+  if(dir === 'LEFT') head.x -= box;
+  if(dir === 'RIGHT') head.x += box;
+  if(dir === 'UP') head.y -= box;
+  if(dir === 'DOWN') head.y += box;
+  // wrap? we treat walls as death (classic)
+  const collisionWall = head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height;
+  const selfHit = snake.some((s,i) => i>0 && s.x===head.x && s.y===head.y);
+
+  if(collisionWall || selfHit){
+    playFX(sCrash);
+    spawnParticle(head.x, head.y, 'rgba(255,60,60,0.9)', 800, 24, 2.8);
+    running = false;
+    // shake
+    shake = 12;
+    setTimeout(()=> showGameOver(), 350);
+    return;
+  }
+
+  // eat?
+  if(head.x === food.x && head.y === food.y){
+    score++;
+    playFX(sEat);
+    // spawn tasty particles & small speed ramp
+    spawnParticle(food.x, food.y, colorEl.value, 700, 12, 1.4);
+    food = randGrid();
+    // dynamic difficulty: slightly speed up every 3 points
+    if(score % 3 === 0 && interval > 35) interval = Math.floor(interval * 0.92);
+    // trail spawn
+    spawnTrail(head.x, head.y, colorEl.value);
+  }else{
+    snake.pop();
+  }
+  snake.unshift(head);
+}
+
+/* small trail of glowing particles at head */
+function spawnTrail(x,y,color){
+  spawnParticle(x,y,color,400,4,0.9);
+}
+
+/* -------------- drawing -------------- */
+function drawGrid(){
+  const step = box;
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = '#003300';
+  for(let x=0;x<=canvas.width;x+=step){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+  }
+  for(let y=0;y<=canvas.height;y+=step){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawNeonRect(x,y,color, isHead=false){
+  ctx.save();
+  ctx.shadowBlur = isHead ? 20 : 12;
+  ctx.shadowColor = color;
+  ctx.fillStyle = color;
+  // slightly smaller fill, outer glow from shadow
+  ctx.fillRect(x+2, y+2, box-4, box-4);
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.strokeRect(x+2,y+2,box-4,box-4);
+  ctx.restore();
+}
+
+function mainDraw(now){
+  // compute delta and steps via accumulator to allow speed changes while using requestAnimationFrame
+  if(!lastTime) lastTime = now;
+  const dt = now - lastTime;
+  lastTime = now;
+  accumulator += dt;
+
+  // screen shake offset
+  let sx = 0, sy = 0;
+  if(shake > 0){ sx = (Math.random()*2-1)*shake; sy = (Math.random()*2-1)*shake; shake = Math.max(0, shake - 0.6); }
+
+  // background gradient
+  ctx.save();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  g.addColorStop(0, '#001600'); g.addColorStop(1, '#000a00');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.translate(sx,sy);
+
+  // animated faint grid
+  drawGrid();
+
+  // animate particles & snake steps according to interval
+  while(accumulator >= interval){
+    step();
+    accumulator -= interval;
+  }
+
+  // draw food as glowing orb
+  ctx.save();
+  ctx.shadowBlur = 30; ctx.shadowColor = '#ffd166';
+  ctx.fillStyle = '#ffd166';
+  ctx.beginPath(); ctx.arc(food.x + box/2, food.y + box/2, box*0.5, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // draw snake
+  for(let i=0;i<snake.length;i++){
+    const s = snake[i];
+    const isHead = i===0;
+    const color = isHead ? colorEl.value : shadeColor(colorEl.value, -18 - i*1.2);
+    drawNeonRect(s.x, s.y, color, isHead);
+  }
+
+  // draw particles on top
+  updateParticles(dt);
+  drawParticles();
+
+  ctx.restore();
+
+  // HUD
+  scoreBox.innerText = `Score: ${score} | High: ${highScore}`;
+
+  // schedule next frame
+  if(running || particles.length>0 || shake>0){
+    requestAnimationFrame(mainDraw);
+  } else {
+    // still draw once more frame to show final state then stop anim loop until restart
+    requestAnimationFrame(()=>{ lastTime = 0; });
+  }
+}
+
+/* -------------------------
+   Helpers: color shade
+   ------------------------- */
+function shadeColor(hex, percent){
+  // hex like #rrggbb; percent negative to darken
+  const num = parseInt(hex.slice(1),16);
+  const r = Math.max(0, Math.min(255, (num >> 16) + percent));
+  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + percent));
+  const b = Math.max(0, Math.min(255, (num & 0x0000FF) + percent));
+  return '#' + ((1<<24) + (r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+/* -------------------------
+   Game Over & UI
+   ------------------------- */
+function showGameOver(){
+  running = false;
+  // update highscore & leaderboard
+  if(score > highScore){ highScore = score; localStorage.setItem('snake_high', highScore); }
+  pushLeader(settings.name || playerNameEl.value || 'Player', score);
+  // show over panel
+  document.getElementById('finalText').innerText = `Score: ${score}\nHigh: ${highScore}`;
+  overPanel.style.display = 'block';
+  menuPanel.style.display = 'none';
+  leaderPanel.style.display = 'none';
+  // small camera rumble using CSS transform on wrap (handled via shake variable earlier)
+}
+
+/* -------------------------
+   Input: keyboard & swipe
+   ------------------------- */
+document.addEventListener('keydown', (e) => {
+  if(!running) return;
+  if(e.key === 'p' || e.key === 'P'){
+    togglePause();
+    return;
+  }
+  if(e.key === 'ArrowLeft' && dir !== 'RIGHT') dir = 'LEFT';
+  if(e.key === 'ArrowRight' && dir !== 'LEFT') dir = 'RIGHT';
+  if(e.key === 'ArrowUp' && dir !== 'DOWN') dir = 'UP';
+  if(e.key === 'ArrowDown' && dir !== 'UP') dir = 'DOWN';
+});
+
+/* mobile swipe */
+let touchStartX=0, touchStartY=0;
+canvas.addEventListener('touchstart', e=>{
+  const t = e.changedTouches[0];
+  touchStartX = t.clientX; touchStartY = t.clientY;
+}, {passive:true});
+canvas.addEventListener('touchend', e=>{
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
+  if(Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+  if(Math.abs(dx) > Math.abs(dy)){
+    if(dx>0 && dir !== 'LEFT') dir='RIGHT';
+    else if(dx<0 && dir !== 'RIGHT') dir='LEFT';
+  } else {
+    if(dy>0 && dir !== 'UP') dir='DOWN';
+    else if(dy<0 && dir !== 'DOWN') dir='UP';
+  }
+}, {passive:true});
+
+/* -------------------------
+   UI wiring
+   ------------------------- */
+startBtn.addEventListener('click', ()=>{
+  sClick.play(); settings.name = playerNameEl.value.trim() || settings.name || 'Player';
+  settings.color = colorEl.value; settings.difficulty = difficultyEl.value;
+  saveSettings();
+  menuPanel.style.display='none';
+  overPanel.style.display='none';
+  leaderPanel.style.display='none';
+  resetState();
+  if(settings.musicOn) bgMusic.play();
+  requestAnimationFrame(mainDraw);
+});
+
+howBtn.addEventListener('click', ()=>{
+  alert('How to play:\n- Arrow keys (desktop) or swipe (mobile)\n- Eat the yellow orbs\n- Avoid walls & your tail\n- Press P to pause\nGood luck!');
+});
+
+leaderBtn.addEventListener('click', ()=>{ showLeaderboard(); });
+
+backFromLeader.addEventListener('click', ()=>{ leaderPanel.style.display='none'; menuPanel.style.display='block'; });
+clearLeader.addEventListener('click', ()=>{ if(confirm('Reset local leaderboard?')){ leaderboard=[]; localStorage.removeItem('snake_leader'); showLeaderboard(); } });
+
+replayBtn.addEventListener('click', ()=>{
+  sClick.play(); overPanel.style.display='none'; resetState(); if(settings.musicOn) bgMusic.play(); requestAnimationFrame(mainDraw);
+});
+homeBtn.addEventListener('click', ()=>{
+  sClick.play(); overPanel.style.display='none'; menuPanel.style.display='block';
+});
+
+pauseBtn.addEventListener('click', ()=> togglePause());
+musicBtn.addEventListener('click', ()=>{ toggleMusic(); saveSettings(); });
+muteBtn.addEventListener('click', ()=>{ toggleFX(); });
+
+/* pause */
+function togglePause(){
+  if(!running) return;
+  paused = !paused;
+  pauseBtn.innerText = paused ? 'Resume' : 'Pause';
+  if(!paused) requestAnimationFrame(mainDraw);
+}
+
+/* initial UI state */
+function initUI(){
+  document.getElementById('scoreBox').innerText = `Score: 0 | High: ${highScore}`;
+  musicBtn.innerText = settings.musicOn ? 'Music: On' : 'Music: Off';
+  muteBtn.innerText = settings.fxOn ? 'Mute FX' : 'FX: Off';
+  // apply saved settings
+  playerNameEl.value = settings.name || '';
+  colorEl.value = settings.color || '#00ff66';
+  difficultyEl.value = settings.difficulty || '100';
+  if(settings.musicOn) bgMusic.play();
+  showLeaderboard(); // load list but hide
+  leaderPanel.style.display = 'none';
+  menuPanel.style.display = 'block';
+}
+
+/* -------------------------
+   Kickoff
+   ------------------------- */
+initUI();
+
+/* small fuzz: periodically save current settings */
+setInterval(()=> saveSettings(), 3000);
+
+</script>
 </body>
 </html>
+
