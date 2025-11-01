@@ -1,39 +1,116 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Nokia Snake 🐍</title>
-    <style>
-      body {
-        background-color: #000;
-        color: #00ff00;
-        font-family: monospace;
-        text-align: center;
-        margin: 0;
-        padding: 20px;
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classic Nokia Snake Game</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #0f0;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: #0f0;
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+    canvas {
+      border: 3px solid #0f0;
+      background-color: #001900;
+    }
+    #score {
+      margin-top: 10px;
+      color: #0f0;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📟 Classic Nokia Snake Game</h1>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div id="score">Score: 0</div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const box = 20;
+    let snake = [{ x: 9 * box, y: 10 * box }];
+    let direction = null;
+    let score = 0;
+
+    let food = {
+      x: Math.floor(Math.random() * 19 + 1) * box,
+      y: Math.floor(Math.random() * 19 + 1) * box
+    };
+
+    document.addEventListener("keydown", setDirection);
+
+    function setDirection(event) {
+      if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      else if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      else if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+      else if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+    }
+
+    function draw() {
+      ctx.fillStyle = "#001900";
+      ctx.fillRect(0, 0, 400, 400);
+
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "#0f0" : "#006600";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
       }
 
-      h1 {
-        color: #00ff00;
+      ctx.fillStyle = "#0f0";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      let snakeX = snake[0].x;
+      let snakeY = snake[0].y;
+
+      if (direction === "LEFT") snakeX -= box;
+      if (direction === "UP") snakeY -= box;
+      if (direction === "RIGHT") snakeX += box;
+      if (direction === "DOWN") snakeY += box;
+
+      if (snakeX === food.x && snakeY === food.y) {
+        score++;
+        document.getElementById("score").innerText = "Score: " + score;
+        food = {
+          x: Math.floor(Math.random() * 19 + 1) * box,
+          y: Math.floor(Math.random() * 19 + 1) * box
+        };
+      } else {
+        snake.pop();
       }
 
-      canvas {
-        background-color: #001a00;
-        border: 3px solid #00ff00;
-        display: block;
-        margin: 20px auto;
+      const newHead = { x: snakeX, y: snakeY };
+
+      if (
+        snakeX < 0 || snakeY < 0 ||
+        snakeX >= 400 || snakeY >= 400 ||
+        collision(newHead, snake)
+      ) {
+        clearInterval(game);
+        alert("💀 Game Over! Final Score: " + score);
+        location.reload();
       }
 
-      #score {
-        font-size: 20px;
-      }
-    </style>
-  </head>
+      snake.unshift(newHead);
+    }
 
-  <body>
-    <h1>🐍 Classic Nokia Snake Game</h1>
-    <canvas id="game" width="400" height="400"></canvas>
-    <p id="score">Score: 0</p>
+    function collision(head, array) {
+      return array.some(segment => segment.x === head.x && segment.y === head.y);
+    }
 
-    <script>
-      const canvas = document.getElementById("game");
+    let game = setInterval(draw, 120);
+  </script>
+</body>
+</html>
