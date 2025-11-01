@@ -1,202 +1,497 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Snake 2025 – Neon Ultra+</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; }
-    body {
-      background: #fff;
-      color: #00c06f;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      overflow: hidden;
-    }
-    h1 { font-size: 2em; margin-bottom: 20px; text-shadow: 0 0 10px #00ff9d; }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Snake 2025 — Neon Grid 3D</title>
+<style>
+:root{
+  --bg-dark:#010a06; --grid-1:#00281a; --neon:#00ff88; --neon-2:#00b36b; --accent:#ffd166; --panel:#f8fff8;
+  --text:#e8fff0;
+}
+*{box-sizing:border-box}
+html,body{height:100%; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, "Courier New", monospace;}
+body{
+  display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#001a09,#000);
+  color:var(--text); padding:18px;
+}
 
-    button {
-      background: rgba(0,255,153,0.1);
-      border: 1px solid #00c06f;
-      border-radius: 8px;
-      color: #00c06f;
-      padding: 10px 20px;
-      font-size: 1em;
-      cursor: pointer;
-      margin: 6px;
-      transition: 0.3s;
-    }
-    button:hover { background: #00c06f; color: white; box-shadow: 0 0 10px #00ff9d; }
+/* container */
+#container{width:min(94vw,980px); display:flex; gap:18px; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
+#wrap{position:relative; width:min(86vw,580px);}
 
-    #gameContainer {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
+/* canvas */
+canvas{display:block; width:100%; height:auto; border-radius:12px; box-shadow:0 18px 40px rgba(0,0,0,0.6); background:linear-gradient(180deg,#001a08,#000); border:1px solid rgba(0,255,136,0.04);}
 
-    canvas {
-      border: 2px solid #00ff99;
-      background: linear-gradient(to bottom, #ffffff, #f3fff8);
-      box-shadow: 0 0 10px #00ff9d;
-    }
+/* panels */
+.panel{background:rgba(0,10,6,0.6); padding:14px; border-radius:10px; border:1px solid rgba(0,255,136,0.06); color:var(--text); width:320px; box-shadow:0 8px 40px rgba(0,0,0,0.5)}
+.controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; justify-content:center}
+button,select{background:rgba(0,20,12,0.6); color:var(--text); border:1px solid rgba(0,255,136,0.12); padding:8px 12px; border-radius:8px; cursor:pointer}
+button:hover{transform:translateY(-3px); box-shadow:0 0 18px rgba(0,255,136,0.06)}
 
-    #scoreboard { margin-top: 10px; font-size: 1.1em; }
+.header{display:flex; align-items:center; gap:12px; margin-bottom:10px}
+.title{font-size:1.4rem; text-shadow:0 0 12px rgba(0,255,136,0.18)}
 
-    .menu, .gameover, .leaderboard {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.8s ease;
-    }
+/* overlays */
+.overlay{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:86%; max-width:420px; z-index:30}
+.hidden{display:none}
 
-    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95);} to { opacity: 1; transform: scale(1);} }
+/* HUD */
+#hud{display:flex; justify-content:space-between; gap:8px; align-items:center; margin-top:12px; width:320px}
+#scoreBox{font-family:inherit}
 
-    .hidden { display: none; }
-  </style>
+/* small */
+.muted{font-size:12px; color:rgba(232,255,240,0.6); margin-top:10px; text-align:center}
+
+/* responsive */
+@media(max-width:720px){ #wrap{width:94vw} .panel{width:94vw} }
+</style>
 </head>
 <body>
+  <div id="container">
+    <div id="wrap">
+      <canvas id="canvas" width="560" height="560"></canvas>
 
-  <div id="menu" class="menu">
-    <h1>🐍 Snake 2025 – Neon Ultra+</h1>
-    <button onclick="startGame('easy')">Start Easy</button>
-    <button onclick="startGame('medium')">Start Medium</button>
-    <button onclick="startGame('hard')">Start Hard</button>
-    <button onclick="showLeaderboard()">Leaderboard</button>
-    <button onclick="alert('Use arrow keys / swipe to move. Eat to grow, avoid walls and yourself!')">How to Play</button>
+      <!-- Start Menu -->
+      <div class="overlay panel" id="menuPanel">
+        <div class="header"><div class="title">🐍 Snake 2025 — Neon Grid</div></div>
+        <div style="text-align:center; color:rgba(232,255,240,0.7)">Neon grid city look — optimized for web & mobile</div>
+
+        <div class="controls" style="margin-top:14px">
+          <div>
+            <label style="display:block; font-size:0.9rem; margin-bottom:6px">Difficulty</label>
+            <select id="difficulty">
+              <option value="140">Easy</option>
+              <option value="100" selected>Medium</option>
+              <option value="60">Hard</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:0.9rem; margin-bottom:6px">Snake style</label>
+            <select id="snakeColor">
+              <option value="#00ff88">Neon Green</option>
+              <option value="#66fff0">Cyan</option>
+              <option value="#ff79d1">Magenta</option>
+              <option value="#ffd166">Amber</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="controls" style="margin-top:14px">
+          <button id="startBtn">▶ Start</button>
+          <button id="leaderBtn">🏆 Leaderboard</button>
+          <button id="howBtn">❓ How to Play</button>
+        </div>
+        <div class="muted">Tip: Arrow keys or swipe. Press P to pause. Works on mobile — tilt-friendly later.</div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="overlay panel hidden" id="leaderPanel">
+        <h3 style="text-align:center;margin:4px 0 8px 0">Leaderboard — Local (Top 10)</h3>
+        <ol id="leader" style="padding-left:18px; max-height:220px; overflow:auto"></ol>
+        <div class="controls" style="margin-top:12px; justify-content:center">
+          <button id="backBtn">Back</button>
+          <button id="clearBtn">Reset</button>
+        </div>
+      </div>
+
+      <!-- Game Over -->
+      <div class="overlay panel hidden" id="overPanel">
+        <h3 style="text-align:center;margin:4px 0 8px 0">💥 Game Over</h3>
+        <div id="finalText" style="text-align:center; margin-bottom:8px"></div>
+        <div class="controls" style="justify-content:center">
+          <button id="replayBtn">🔁 Play Again</button>
+          <button id="homeBtn">🏠 Menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- right-side controls -->
+    <div class="panel">
+      <div style="font-weight:700; margin-bottom:8px">Controls & Info</div>
+      <div class="controls" style="justify-content:flex-start">
+        <button id="pauseBtn">⏸ Pause</button>
+        <button id="musicBtn">🎵 Music: On</button>
+        <button id="muteBtn">🔈 Mute FX</button>
+      </div>
+
+      <div id="hud" style="margin-top:12px">
+        <div id="scoreBox">Score: 0 | High: 0</div>
+      </div>
+
+      <div style="margin-top:12px; font-size:13px; color:rgba(232,255,240,0.7)">
+        <div>Local leaderboard saved in your browser.</div>
+        <div style="margin-top:8px" class="muted">Deploy on Vercel → paste URL into Farcaster to embed as a Frame.</div>
+      </div>
+    </div>
   </div>
 
-  <div id="gameContainer">
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div id="scoreboard">Score: <span id="score">0</span> | High: <span id="highscore">0</span></div>
-    <button onclick="pauseGame()">Pause</button>
-    <button onclick="backToMenu()">Back to Menu</button>
-  </div>
+  <!-- audio -->
+  <audio id="sfxEat" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.wav"></audio>
+  <audio id="sfxCrash" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.wav"></audio>
+  <audio id="sfxClick" src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.wav"></audio>
+  <audio id="bgMusic" loop src="https://assets.mixkit.co/music/preview/mixkit-80s-retrowave-1121.mp3"></audio>
 
-  <div id="leaderboard" class="leaderboard hidden">
-    <h1>🏆 Leaderboard</h1>
-    <ol id="scoreList"></ol>
-    <button onclick="backToMenu()">Back</button>
-  </div>
+<script>
+/* ---------------------------
+   Neon Grid 3D — Game Core
+   --------------------------- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-  <audio id="eatSound" src="https://cdn.pixabay.com/download/audio/2021/09/27/audio_0bda39b855.mp3?filename=collectcoin-6075.mp3"></audio>
-  <audio id="crashSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4e3a7b7a4b.mp3?filename=error-126627.mp3"></audio>
+const menuPanel = document.getElementById('menuPanel');
+const leaderPanel = document.getElementById('leaderPanel');
+const overPanel = document.getElementById('overPanel');
 
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const eatSound = document.getElementById('eatSound');
-    const crashSound = document.getElementById('crashSound');
-    const scoreElem = document.getElementById('score');
-    const highElem = document.getElementById('highscore');
+const leaderEl = document.getElementById('leader');
+const finalText = document.getElementById('finalText');
+const scoreBox = document.getElementById('scoreBox');
 
-    let box = 20, snake, food, direction, score, speed, game, paused = false;
+const difficultyEl = document.getElementById('difficulty');
+const colorEl = document.getElementById('snakeColor');
 
-    function startGame(mode) {
-      document.getElementById('menu').style.display = 'none';
-      document.getElementById('leaderboard').classList.add('hidden');
-      document.getElementById('gameContainer').style.display = 'flex';
-      resetGame(mode);
-    }
+const sEat = document.getElementById('sfxEat');
+const sCrash = document.getElementById('sfxCrash');
+const sClick = document.getElementById('sfxClick');
+const bgMusic = document.getElementById('bgMusic');
 
-    function resetGame(mode) {
-      snake = [{x: 9*box, y:10*box}];
-      direction = null;
-      food = {x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box};
-      score = 0;
-      speed = mode === 'easy' ? 180 : mode === 'medium' ? 120 : 80;
-      if (game) clearInterval(game);
-      game = setInterval(draw, speed);
-    }
+const startBtn = document.getElementById('startBtn');
+const leaderBtn = document.getElementById('leaderBtn');
+const howBtn = document.getElementById('howBtn');
+const backBtn = document.getElementById('backBtn');
+const clearBtn = document.getElementById('clearBtn');
+const replayBtn = document.getElementById('replayBtn');
+const homeBtn = document.getElementById('homeBtn');
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-      else if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-      else if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
-      else if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-    });
+const pauseBtn = document.getElementById('pauseBtn');
+const musicBtn = document.getElementById('musicBtn');
+const muteBtn = document.getElementById('muteBtn');
 
-    function draw() {
-      if (paused) return;
-      ctx.clearRect(0, 0, 400, 400);
-      for (let i = 0; i < snake.length; i++) {
-        ctx.fillStyle = i === 0 ? '#00c06f' : 'rgba(0,192,111,0.3)';
-        ctx.shadowColor = '#00ff99';
-        ctx.shadowBlur = 10;
-        ctx.fillRect(snake[i].x, snake[i].y, box, box);
-      }
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#ffb200';
-      ctx.beginPath();
-      ctx.arc(food.x + box/2, food.y + box/2, box/2 - 2, 0, Math.PI*2);
-      ctx.fill();
+let settings = {
+  color: localStorage.getItem('snake_color') || '#00ff88',
+  difficulty: localStorage.getItem('snake_diff') || '100',
+  musicOn: localStorage.getItem('snake_music') !== 'false',
+  fxOn: localStorage.getItem('snake_fx') !== 'false'
+};
 
-      let headX = snake[0].x, headY = snake[0].y;
-      if (direction === 'LEFT') headX -= box;
-      if (direction === 'UP') headY -= box;
-      if (direction === 'RIGHT') headX += box;
-      if (direction === 'DOWN') headY += box;
+colorEl.value = settings.color;
+difficultyEl.value = settings.difficulty;
+bgMusic.volume = 0.3;
 
-      if (headX === food.x && headY === food.y) {
-        score++;
-        eatSound.play();
-        food = {x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box};
-      } else {
-        snake.pop();
-      }
+let grid = 28;                // grid cells per row/col
+let box = 20;                 // will compute from canvas size (logical)
+let snake = [];
+let dir = null;
+let food = null;
+let score = 0;
+let highScore = Number(localStorage.getItem('snake_high') || 0);
+let leaderboard = JSON.parse(localStorage.getItem('snake_leader') || '[]');
+let running = false;
+let paused = false;
+let interval = Number(settings.difficulty || 100); // ms per step
+let particles = [];
+let lastTime = 0;
+let accumulator = 0;
+let shake = 0;
+let camOffset = {x:0,y:0};
 
-      const newHead = {x: headX, y: headY};
-      if (headX < 0 || headY < 0 || headX >= 400 || headY >= 400 || collision(newHead, snake)) {
-        crashSound.play();
-        clearInterval(game);
-        saveScore(score);
-        alert('💥 Game Over! Your score: ' + score);
-        backToMenu();
-      }
+/* responsive and logical sizing */
+function fitCanvas(){
+  // logical resolution fixed for crisp grid
+  canvas.width = 560;
+  canvas.height = 560;
+  box = Math.floor(canvas.width / grid);
+}
+fitCanvas();
+window.addEventListener('resize', fitCanvas);
 
-      snake.unshift(newHead);
-      scoreElem.textContent = score;
-      let high = localStorage.getItem('highscore') || 0;
-      if (score > high) localStorage.setItem('highscore', score);
-      highElem.textContent = localStorage.getItem('highscore');
-    }
+/* utility: snap to grid integers (fix collision bug) */
+function gridPos() {
+  return {
+    cols: Math.floor(canvas.width / box),
+    rows: Math.floor(canvas.height / box)
+  }
+}
+function randGrid(){
+  const cols = gridPos().cols, rows = gridPos().rows;
+  return { x: (Math.floor(Math.random()*(cols-2))+1)*box, y: (Math.floor(Math.random()*(rows-2))+1)*box };
+}
 
-    function collision(head, array) {
-      return array.some(s => s.x === head.x && s.y === head.y);
-    }
+/* save settings */
+function saveSettings(){
+  localStorage.setItem('snake_color', colorEl.value);
+  localStorage.setItem('snake_diff', difficultyEl.value);
+  localStorage.setItem('snake_music', settings.musicOn ? 'true' : 'false');
+  localStorage.setItem('snake_fx', settings.fxOn ? 'true' : 'false');
+}
 
-    function pauseGame() { paused = !paused; }
+/* sound helpers */
+function playFX(snd){
+  if(!settings.fxOn) return;
+  try{ snd.currentTime = 0; snd.play(); } catch(e){}
+}
+function toggleMusic(){ settings.musicOn = !settings.musicOn; if(settings.musicOn) bgMusic.play(); else bgMusic.pause(); musicBtn.innerText = settings.musicOn ? '🎵 Music: On' : '🎵 Music: Off'; saveSettings(); }
+function toggleFX(){ settings.fxOn = !settings.fxOn; muteBtn.innerText = settings.fxOn ? '🔈 Mute FX' : '🔈 FX Off'; saveSettings(); }
 
-    function backToMenu() {
-      clearInterval(game);
-      document.getElementById('gameContainer').style.display = 'none';
-      document.getElementById('leaderboard').classList.add('hidden');
-      document.getElementById('menu').style.display = 'flex';
-    }
+/* particles */
+function spawnParticle(x,y,color,life=700,count=10,speed=1.6){
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const sp = (Math.random()*0.6+0.6) * speed;
+    particles.push({ x:x+box/2, y:y+box/2, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, color, life, age:0, size:(Math.random()*3)+1 });
+  }
+}
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.age += dt;
+    p.x += p.vx * (dt/16);
+    p.y += p.vy * (dt/16) + 0.02*(dt/16);
+    if(p.age > p.life) particles.splice(i,1);
+  }
+}
+function drawParticles(){
+  ctx.save();
+  particles.forEach(p=>{
+    const a = 1 - p.age/p.life;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x + camOffset.x, p.y + camOffset.y, p.size, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
 
-    function saveScore(score) {
-      let scores = JSON.parse(localStorage.getItem('scores') || '[]');
-      scores.push(score);
-      scores.sort((a,b) => b - a);
-      localStorage.setItem('scores', JSON.stringify(scores.slice(0,10)));
-    }
+/* core game */
+function resetState(){
+  const cols = gridPos().cols, rows = gridPos().rows;
+  // center snake
+  snake = [{ x: Math.floor(cols/2)*box, y: Math.floor(rows/2)*box }];
+  dir = null;
+  food = randGrid();
+  score = 0;
+  interval = Number(difficultyEl.value);
+  settings.color = colorEl.value;
+  saveSettings();
+  running = true;
+  paused = false;
+  particles = [];
+  shake = 0;
+  camOffset = {x:0,y:0};
+}
 
-    function showLeaderboard() {
-      document.getElementById('menu').style.display = 'none';
-      const list = document.getElementById('scoreList');
-      list.innerHTML = '';
-      let scores = JSON.parse(localStorage.getItem('scores') || '[]');
-      scores.forEach((s, i) => {
-        const li = document.createElement('li');
-        li.textContent = `#${i+1}: ${s}`;
-        list.appendChild(li);
-      });
-      document.getElementById('leaderboard').classList.remove('hidden');
-    }
-  </script>
+/* precise step — use integer grid moves only to avoid early collision */
+function step(){
+  if(!running || paused) return;
+  let head = {...snake[0]};
+  if(dir==='LEFT') head.x -= box;
+  if(dir==='RIGHT') head.x += box;
+  if(dir==='UP') head.y -= box;
+  if(dir==='DOWN') head.y += box;
+
+  // ensure integers on grid
+  head.x = Math.round(head.x/box)*box;
+  head.y = Math.round(head.y/box)*box;
+
+  const collisionWall = head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height;
+  const selfHit = snake.some((s,i)=>i>0 && s.x===head.x && s.y===head.y);
+
+  if(collisionWall || selfHit){
+    playFX(sCrash);
+    spawnParticle(head.x, head.y, 'rgba(255,88,88,0.95)',900,26,2.4);
+    running = false;
+    shake = 14;
+    setTimeout(()=> showGameOver(), 360);
+    return;
+  }
+
+  // eat
+  if(head.x === food.x && head.y === food.y){
+    score++;
+    playFX(sEat);
+    spawnParticle(food.x, food.y, settings.color, 800, 14, 1.8);
+    // speed ramp small
+    if(score % 3 === 0 && interval > 40) interval = Math.floor(interval * 0.92);
+    food = randGrid();
+    // trail
+    spawnParticle(head.x, head.y, settings.color, 380, 4, 0.9);
+  } else {
+    snake.pop();
+  }
+
+  snake.unshift(head);
+}
+
+/* draw helpers: grid + neon boxes + glow */
+function drawGrid(t){
+  ctx.save();
+  // moving grid effect: offset by sine for subtle motion
+  const step = box;
+  const offset = Math.sin(t/900)*6;
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = '#00442e';
+  for(let x=0;x<=canvas.width;x+=step){
+    ctx.beginPath(); ctx.moveTo(x+offset,0); ctx.lineTo(x+offset,canvas.height); ctx.stroke();
+  }
+  for(let y=0;y<=canvas.height;y+=step){
+    ctx.beginPath(); ctx.moveTo(0,y+offset); ctx.lineTo(canvas.width,y+offset); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawNeon(x,y,color, head=false){
+  ctx.save();
+  ctx.shadowBlur = head ? 28 : 12;
+  ctx.shadowColor = color;
+  ctx.fillStyle = color;
+  // slightly inset fill to create border illusion
+  ctx.fillRect(x+2 + camOffset.x, y+2 + camOffset.y, box-4, box-4);
+  ctx.restore();
+}
+
+/* main render loop — use accumulator to handle ms steps + smooth rendering */
+function mainDraw(now){
+  if(!lastTime) lastTime = now;
+  const dt = now - lastTime; lastTime = now;
+  accumulator += dt;
+
+  // camera sway small (based on head velocity)
+  if(shake>0){ camOffset.x = (Math.random()*2-1)*shake; camOffset.y = (Math.random()*2-1)*shake; shake = Math.max(0, shake - 0.6); }
+  else { camOffset.x *= 0.9; camOffset.y *= 0.9; }
+
+  // background
+  ctx.save();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const bg = ctx.createLinearGradient(0,0,canvas.width,canvas.height); bg.addColorStop(0,'#001f14'); bg.addColorStop(1,'#000a00');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.translate(camOffset.x, camOffset.y);
+
+  drawGrid(now);
+
+  // step logic per interval (avoid multiple steps if accumulator big)
+  while(accumulator >= interval){
+    step();
+    accumulator -= interval;
+  }
+
+  // draw food as glowing orb (pulse)
+  const pulse = 1 + 0.08*Math.sin(performance.now()/160);
+  ctx.save(); ctx.shadowBlur = 28; ctx.shadowColor = '#ffd166';
+  ctx.fillStyle = '#ffd166';
+  ctx.beginPath(); ctx.arc(food.x+box/2, food.y+box/2, (box/2)*pulse, 0, Math.PI*2); ctx.fill(); ctx.restore();
+
+  // draw snake with gradient tail: head bright, tail fades
+  for(let i=0;i<snake.length;i++){
+    const s = snake[i];
+    const isHead = i===0;
+    const alpha = 1 - (i / (snake.length*1.25)); // tail fade
+    const color = isHead ? settings.color : shadeColor(settings.color, -12 - i*1.6);
+    ctx.globalAlpha = alpha;
+    drawNeon(s.x, s.y, color, isHead);
+  }
+  ctx.globalAlpha = 1;
+
+  updateParticles(dt);
+  drawParticles();
+
+  // HUD
+  document.getElementById('scoreBox').innerText = `Score: ${score} | High: ${highScore}`;
+
+  ctx.restore();
+
+  // continue animation while running or particles present
+  if(running || particles.length>0 || shake>0) requestAnimationFrame(mainDraw);
+  else requestAnimationFrame(()=>{ lastTime = 0; });
+}
+
+/* shade utility */
+function shadeColor(hex, percent){
+  const num = parseInt(hex.slice(1),16);
+  const r = Math.max(0, Math.min(255, (num>>16) + percent));
+  const g = Math.max(0, Math.min(255, ((num>>8)&0x00FF) + percent));
+  const b = Math.max(0, Math.min(255, (num & 0x0000FF) + percent));
+  return '#' + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
+}
+
+/* game over & leaderboard */
+function showGameOver(){
+  running = false;
+  if(score > highScore){ highScore = score; localStorage.setItem('snake_high', highScore); }
+  // add local leaderboard (use 'Player')
+  leaderboard.push({name:'Player', score, ts:Date.now()});
+  leaderboard.sort((a,b)=>b.score - a.score || a.ts - b.ts);
+  leaderboard = leaderboard.slice(0,20);
+  localStorage.setItem('snake_leader', JSON.stringify(leaderboard));
+  finalText.innerText = `Score: ${score}\nHigh: ${highScore}`;
+  overPanel.classList.remove('hidden'); menuPanel.classList.add('hidden'); leaderPanel.classList.add('hidden');
+  updateLeaderDOM();
+}
+
+/* input: keyboard & swipe */
+document.addEventListener('keydown', e=>{
+  if(e.key==='p' || e.key==='P'){ togglePause(); return; }
+  if(!running) return;
+  if(e.key==='ArrowLeft' && dir!=='RIGHT') dir='LEFT';
+  if(e.key==='ArrowRight' && dir!=='LEFT') dir='RIGHT';
+  if(e.key==='ArrowUp' && dir!=='DOWN') dir='UP';
+  if(e.key==='ArrowDown' && dir!=='UP') dir='DOWN';
+});
+
+/* swipe */
+let touchStartX=0, touchStartY=0;
+canvas.addEventListener('touchstart', e=>{ const t=e.changedTouches[0]; touchStartX = t.clientX; touchStartY = t.clientY; }, {passive:true});
+canvas.addEventListener('touchend', e=>{ const t=e.changedTouches[0]; const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY; if(Math.abs(dx)<20 && Math.abs(dy)<20) return; if(Math.abs(dx)>Math.abs(dy)){ if(dx>0 && dir!=='LEFT') dir='RIGHT'; else if(dx<0 && dir!=='RIGHT') dir='LEFT'; } else { if(dy>0 && dir!=='UP') dir='DOWN'; else if(dy<0 && dir!=='DOWN') dir='UP'; } }, {passive:true});
+
+/* UI wiring */
+startBtn.addEventListener('click', ()=>{ sClick.play(); settings.color = colorEl.value; settings.difficulty = difficultyEl.value; saveSettings(); menuPanel.classList.add('hidden'); overPanel.classList.add('hidden'); leaderPanel.classList.add('hidden'); resetState(); if(settings.musicOn) bgMusic.play(); requestAnimationFrame(mainDraw); });
+
+leaderBtn.addEventListener('click', ()=>{ updateLeaderDOM(); leaderPanel.classList.remove('hidden'); menuPanel.classList.add('hidden'); overPanel.classList.add('hidden'); });
+howBtn.addEventListener('click', ()=>{ alert('How to play:\\n- Arrow keys (desktop) or swipe (mobile)\\n- Eat the yellow orb to grow & score\\n- Avoid walls & your tail\\n- Press P to pause'); });
+
+backBtn.addEventListener('click', ()=>{ leaderPanel.classList.add('hidden'); menuPanel.classList.remove('hidden'); });
+clearBtn.addEventListener('click', ()=>{ if(confirm('Reset local leaderboard?')){ leaderboard=[]; localStorage.removeItem('snake_leader'); updateLeaderDOM(); } });
+
+replayBtn.addEventListener('click', ()=>{ sClick.play(); overPanel.classList.add('hidden'); resetState(); if(settings.musicOn) bgMusic.play(); requestAnimationFrame(mainDraw); });
+homeBtn.addEventListener('click', ()=>{ sClick.play(); overPanel.classList.add('hidden'); menuPanel.classList.remove('hidden'); });
+
+pauseBtn.addEventListener('click', ()=> togglePause());
+musicBtn.addEventListener('click', ()=> toggleMusic());
+muteBtn.addEventListener('click', ()=> toggleFX());
+
+function togglePause(){ if(!running) return; paused = !paused; pauseBtn.innerText = paused ? '▶ Resume' : '⏸ Pause'; if(!paused) requestAnimationFrame(mainDraw); }
+function toggleMusic(){ settings.musicOn = !settings.musicOn; musicBtn.innerText = settings.musicOn ? '🎵 Music: On' : '🎵 Music: Off'; if(settings.musicOn) bgMusic.play(); else bgMusic.pause(); saveSettings(); }
+function toggleFX(){ settings.fxOn = !settings.fxOn; muteBtn.innerText = settings.fxOn ? '🔈 Mute FX' : '🔈 FX Off'; saveSettings(); }
+
+/* leaderboard DOM update */
+function updateLeaderDOM(){
+  leaderEl.innerHTML = '';
+  if(leaderboard.length===0){ leaderEl.innerHTML = '<li style="color:rgba(232,255,240,0.7)">No scores yet — play to add!</li>'; return; }
+  leaderboard.slice(0,10).forEach((r,i)=>{ leaderEl.innerHTML += `<li>${i+1}. <strong>${escapeHtml(r.name)}</strong> — ${r.score}</li>`; });
+}
+function escapeHtml(s){ return (s+'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* init & helpers */
+function init(){
+  document.getElementById('scoreBox').innerText = `Score: 0 | High: ${highScore}`;
+  musicBtn.innerText = settings.musicOn ? '🎵 Music: On' : '🎵 Music: Off';
+  muteBtn.innerText = settings.fxOn ? '🔈 Mute FX' : '🔈 FX Off';
+  colorEl.value = settings.color; difficultyEl.value = settings.difficulty;
+  updateLeaderDOM();
+  leaderPanel.classList.add('hidden'); overPanel.classList.add('hidden'); menuPanel.classList.remove('hidden');
+  if(settings.musicOn) bgMusic.play();
+  try{ sEat.volume = 0.9; sCrash.volume = 0.9; sClick.volume = 0.8; }catch(e){}
+}
+init();
+
+setInterval(()=> saveSettings(), 3000);
+function perfNow(){ return window.performance && performance.now ? performance.now() : Date.now(); }
+
+/* small helper to ensure easy mode speed change applied if user picks easy in menu */
+difficultyEl.addEventListener('change', ()=> { interval = Number(difficultyEl.value); saveSettings(); });
+
+/* expose quick debug: play once */
+window.startDebug = ()=>{ resetState(); requestAnimationFrame(mainDraw); }
+
+</script>
 </body>
 </html>
