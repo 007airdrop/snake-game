@@ -115,6 +115,7 @@
   </div>
 
   <script>
+    // --- Snake Game Logic ---
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
     const box = 20;
@@ -156,10 +157,10 @@
     }
 
     function draw() {
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw food (glowing apple)
+      // Draw food
       ctx.shadowBlur = 20;
       ctx.shadowColor = "#00ff99";
       ctx.fillStyle = "#00ff99";
@@ -167,14 +168,11 @@
       ctx.arc(food.x + box / 2, food.y + box / 2, box / 2, 0, 2 * Math.PI);
       ctx.fill();
 
-      // Draw snake (dark neon 3D effect)
+      // Draw snake
       ctx.shadowBlur = 0;
       for (let i = 0; i < snake.length; i++) {
-        let glow = i === 0 ? "#00ff99" : "#222";
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.roundRect(snake[i].x + 2, snake[i].y + 2, box - 4, box - 4, 5);
-        ctx.fill();
+        ctx.fillStyle = i === 0 ? "#000" : "#222"; // dark snake
+        ctx.fillRect(snake[i].x, snake[i].y, box - 2, box - 2);
       }
 
       let snakeX = snake[0].x;
@@ -215,4 +213,33 @@
 
     function endGame() {
       finalScore.innerText = score;
-      gameOverScreen.class
+      gameOverScreen.classList.remove("hidden");
+      board.classList.add("hidden");
+
+      let high = localStorage.getItem("highScore2025") || 0;
+      if (score > high) {
+        localStorage.setItem("highScore2025", score);
+        highEl.innerText = score;
+      }
+    }
+
+    function restart() {
+      gameOverScreen.classList.add("hidden");
+      menu.classList.remove("hidden");
+    }
+  </script>
+
+  <!-- ✅ FARCASTER SDK (LOADED LAST TO FIX "READY NOT CALLED") -->
+  <script>
+    window.addEventListener("load", async () => {
+      try {
+        const sdk = await import("https://cdn.jsdelivr.net/npm/@farcaster/frame-sdk@latest/dist/sdk.min.js");
+        sdk.actions.ready();
+        console.log("✅ Farcaster Ready signal sent");
+      } catch (e) {
+        console.warn("Farcaster SDK failed to load:", e);
+      }
+    });
+  </script>
+</body>
+</html>
