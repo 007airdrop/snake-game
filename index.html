@@ -3,248 +3,216 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Snake 2025 – Neon Edition</title>
-
-  <!-- Farcaster Frame SDK -->
-  <script src="https://unpkg.com/@farcaster/frame-sdk/dist/sdk.js"></script>
-
+  <title>Snake 3D — 2025 Edition</title>
   <style>
     body {
-      font-family: 'Poppins', sans-serif;
-      background: #fff;
       margin: 0;
-      overflow: hidden;
+      padding: 0;
+      background: #fff;
+      font-family: 'Poppins', sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      overflow: hidden;
       flex-direction: column;
-      color: #111;
     }
 
-    #home {
+    canvas {
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(0, 255, 150, 0.3);
+      background: linear-gradient(145deg, #ffffff, #e6e6e6);
+    }
+
+    #menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
       text-align: center;
-      animation: fadeIn 1s;
-    }
-
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 0.4em;
-      background: linear-gradient(90deg, #111, #00c06f);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      z-index: 10;
     }
 
     button {
-      background: #00c06f;
-      border: none;
+      background: #0d0d0d;
       color: white;
-      font-size: 1.1em;
-      padding: 12px 28px;
-      border-radius: 10px;
-      margin: 8px;
+      border: none;
+      padding: 15px 40px;
+      margin: 10px;
+      border-radius: 12px;
+      font-size: 18px;
       cursor: pointer;
-      transition: 0.2s;
+      transition: 0.3s;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
     }
 
     button:hover {
       transform: scale(1.05);
-      box-shadow: 0 0 12px #00c06f;
+      background: #00ff99;
+      color: #111;
     }
 
-    #gameContainer {
+    #scoreboard {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #111;
+      font-size: 20px;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+      z-index: 5;
+    }
+
+    #gameOver {
       display: none;
-      flex-direction: column;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      justify-content: center;
       align-items: center;
+      flex-direction: column;
+      z-index: 20;
+      font-size: 24px;
     }
 
-    canvas {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(0, 192, 111, 0.3);
-    }
-
-    #scoreBoard {
-      margin-top: 10px;
-      font-size: 1.1em;
-      font-weight: 600;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 
 <body>
-  <!-- Home Screen -->
-  <div id="home">
-    <h1>🐍 Snake 2025</h1>
-    <p>Select your difficulty</p>
+  <div id="menu">
+    <h1>🐍 Snake 3D — 2025 Edition</h1>
+    <p>Choose difficulty and start your journey!</p>
     <button onclick="startGame('easy')">Easy</button>
     <button onclick="startGame('medium')">Medium</button>
     <button onclick="startGame('hard')">Hard</button>
-    <p style="margin-top:20px; font-size:0.9em; color:#555;">Built for Base • Play on Farcaster</p>
   </div>
 
-  <!-- Game Screen -->
-  <div id="gameContainer">
-    <canvas id="game" width="400" height="400"></canvas>
-    <div id="scoreBoard">
-      🧮 Score: <span id="score">0</span> |
-      🏆 High Score: <span id="highscore">0</span>
-    </div>
-    <button onclick="backToMenu()">🏠 Back</button>
+  <div id="scoreboard" class="hidden">
+    Score: <span id="score">0</span> | High: <span id="highscore">0</span>
+  </div>
+
+  <canvas id="game" width="400" height="400"></canvas>
+
+  <div id="gameOver" class="hidden">
+    <h2>💀 Game Over!</h2>
+    <p>Your Score: <span id="finalScore"></span></p>
+    <button onclick="restart()">Restart</button>
   </div>
 
   <script>
-    let canvas = document.getElementById("game");
-    let ctx = canvas.getContext("2d");
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
     const box = 20;
-    let snake = [{ x: 9 * box, y: 10 * box }];
-    let direction = null;
-    let food = randomFood();
-    let score = 0;
-    let speed = 180;
-    let game;
-    let paused = false;
+    let snake, food, direction, score, gameInterval, speed;
+    const scoreEl = document.getElementById("score");
+    const highEl = document.getElementById("highscore");
+    const menu = document.getElementById("menu");
+    const gameOverScreen = document.getElementById("gameOver");
+    const finalScore = document.getElementById("finalScore");
+    const board = document.getElementById("scoreboard");
 
-    const eatSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-quick-win-video-game-notification-269.wav");
-    const crashSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.wav");
+    highEl.innerText = localStorage.getItem("highScore2025") || 0;
 
-    const scoreElem = document.getElementById("score");
-    const highElem = document.getElementById("highscore");
-    const home = document.getElementById("home");
-    const gameContainer = document.getElementById("gameContainer");
-
-    // Difficulty Settings
-    const difficultySpeeds = { easy: 160, medium: 120, hard: 80 };
-
-    function randomFood() {
-      return {
-        x: Math.floor(Math.random() * 20) * box,
-        y: Math.floor(Math.random() * 20) * box,
-      };
-    }
-
-    document.addEventListener("keydown", directionSet);
-    function directionSet(event) {
-      if (event.keyCode == 37 && direction != "RIGHT") direction = "LEFT";
-      if (event.keyCode == 38 && direction != "DOWN") direction = "UP";
-      if (event.keyCode == 39 && direction != "LEFT") direction = "RIGHT";
-      if (event.keyCode == 40 && direction != "UP") direction = "DOWN";
-    }
-
-    function startGame(diff) {
-      home.style.display = "none";
-      gameContainer.style.display = "flex";
-      score = 0;
-      direction = null;
+    function startGame(difficulty) {
+      speed = difficulty === 'easy' ? 150 : difficulty === 'medium' ? 100 : 70;
+      menu.classList.add("hidden");
+      board.classList.remove("hidden");
       snake = [{ x: 9 * box, y: 10 * box }];
-      speed = difficultySpeeds[diff];
-      food = randomFood();
-      clearInterval(game);
-      game = setInterval(draw, speed);
+      food = {
+        x: Math.floor(Math.random() * 19 + 1) * box,
+        y: Math.floor(Math.random() * 19 + 1) * box
+      };
+      direction = null;
+      score = 0;
+      document.addEventListener("keydown", changeDirection);
+      clearInterval(gameInterval);
+      gameInterval = setInterval(draw, speed);
     }
 
-    function backToMenu() {
-      clearInterval(game);
-      gameContainer.style.display = "none";
-      home.style.display = "block";
+    function changeDirection(e) {
+      if (e.keyCode === 37 && direction !== "RIGHT") direction = "LEFT";
+      else if (e.keyCode === 38 && direction !== "DOWN") direction = "UP";
+      else if (e.keyCode === 39 && direction !== "LEFT") direction = "RIGHT";
+      else if (e.keyCode === 40 && direction !== "UP") direction = "DOWN";
+    }
+
+    function collision(newHead, snakeArray) {
+      return snakeArray.some(segment => segment.x === newHead.x && segment.y === newHead.y);
     }
 
     function draw() {
-      ctx.clearRect(0, 0, 400, 400);
-      // background gradient
-      const bg = ctx.createLinearGradient(0, 0, 400, 400);
-      bg.addColorStop(0, "#ffffff");
-      bg.addColorStop(1, "#f7fff9");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, 400, 400);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // draw food
-      const foodGlow = ctx.createRadialGradient(food.x + box / 2, food.y + box / 2, 2, food.x + box / 2, food.y + box / 2, 14);
-      foodGlow.addColorStop(0, "#ffb200");
-      foodGlow.addColorStop(1, "rgba(255,178,0,0)");
-      ctx.fillStyle = foodGlow;
+      // Draw food (glowing apple)
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "#00ff99";
+      ctx.fillStyle = "#00ff99";
       ctx.beginPath();
-      ctx.arc(food.x + box / 2, food.y + box / 2, box / 2 - 2, 0, Math.PI * 2);
+      ctx.arc(food.x + box / 2, food.y + box / 2, box / 2, 0, 2 * Math.PI);
       ctx.fill();
 
-      // draw snake
+      // Draw snake (dark neon 3D effect)
+      ctx.shadowBlur = 0;
       for (let i = 0; i < snake.length; i++) {
-        const alpha = 1 - i / snake.length;
-        const color = `rgba(10,10,10,${0.8 + alpha * 0.3})`; // dark neon feel
-        const glow = ctx.createRadialGradient(
-          snake[i].x + box / 2,
-          snake[i].y + box / 2,
-          2,
-          snake[i].x + box / 2,
-          snake[i].y + box / 2,
-          12
-        );
-        glow.addColorStop(0, color);
-        glow.addColorStop(1, "rgba(0,0,0,0)");
+        let glow = i === 0 ? "#00ff99" : "#222";
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(snake[i].x + box / 2, snake[i].y + box / 2, box / 2, 0, Math.PI * 2);
+        ctx.roundRect(snake[i].x + 2, snake[i].y + 2, box - 4, box - 4, 5);
         ctx.fill();
       }
 
-      let headX = snake[0].x;
-      let headY = snake[0].y;
-      if (direction === "LEFT") headX -= box;
-      if (direction === "UP") headY -= box;
-      if (direction === "RIGHT") headX += box;
-      if (direction === "DOWN") headY += box;
+      let snakeX = snake[0].x;
+      let snakeY = snake[0].y;
 
-      if (headX === food.x && headY === food.y) {
+      if (direction === "LEFT") snakeX -= box;
+      if (direction === "UP") snakeY -= box;
+      if (direction === "RIGHT") snakeX += box;
+      if (direction === "DOWN") snakeY += box;
+
+      if (snakeX === food.x && snakeY === food.y) {
         score++;
-        eatSound.play();
-        food = randomFood();
+        scoreEl.innerText = score;
+        food = {
+          x: Math.floor(Math.random() * 19 + 1) * box,
+          y: Math.floor(Math.random() * 19 + 1) * box
+        };
       } else {
         snake.pop();
       }
 
-      const newHead = { x: headX, y: headY };
-      if (headX < 0 || headY < 0 || headX >= 400 || headY >= 400 || collision(newHead, snake)) {
-        crashSound.play();
-        clearInterval(game);
-        saveScore(score);
-        alert("💥 Game Over! Your score: " + score);
-        backToMenu();
+      let newHead = { x: snakeX, y: snakeY };
+
+      if (
+        snakeX < 0 ||
+        snakeY < 0 ||
+        snakeX >= canvas.width ||
+        snakeY >= canvas.height ||
+        collision(newHead, snake)
+      ) {
+        clearInterval(gameInterval);
+        endGame();
+        return;
       }
 
       snake.unshift(newHead);
-      scoreElem.textContent = score;
-      let high = localStorage.getItem("highscore") || 0;
-      if (score > high) localStorage.setItem("highscore", score);
-      highElem.textContent = localStorage.getItem("highscore");
     }
 
-    function collision(head, arr) {
-      for (let i = 0; i < arr.length; i++) {
-        if (head.x == arr[i].x && head.y == arr[i].y) return true;
-      }
-      return false;
-    }
-
-    function saveScore(s) {
-      let high = localStorage.getItem("highscore") || 0;
-      if (s > high) localStorage.setItem("highscore", s);
-    }
-
-    // Farcaster SDK init
-    window.addEventListener("DOMContentLoaded", async () => {
-      try {
-        const sdk = await window.FarcasterFrameSDK.init();
-        sdk.actions.ready(); // ✅ tell Warpcast the app is ready
-        console.log("✅ Farcaster Mini-App Ready");
-      } catch (e) {
-        console.log("⚠️ Running standalone");
-      }
-    });
-  </script>
-</body>
-</html>
+    function endGame() {
+      finalScore.innerText = score;
+      gameOverScreen.class
