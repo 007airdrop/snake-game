@@ -1,245 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Snake 3D — 2025 Edition</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-      font-family: 'Poppins', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-      flex-direction: column;
-    }
-
-    canvas {
-      border-radius: 16px;
-      box-shadow: 0 0 40px rgba(0, 255, 150, 0.3);
-      background: linear-gradient(145deg, #ffffff, #e6e6e6);
-    }
-
-    #menu {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255,255,255,0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      backdrop-filter: blur(5px);
-      text-align: center;
-      z-index: 10;
-    }
-
-    button {
-      background: #0d0d0d;
-      color: white;
-      border: none;
-      padding: 15px 40px;
-      margin: 10px;
-      border-radius: 12px;
-      font-size: 18px;
-      cursor: pointer;
-      transition: 0.3s;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    }
-
-    button:hover {
-      transform: scale(1.05);
-      background: #00ff99;
-      color: #111;
-    }
-
-    #scoreboard {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #111;
-      font-size: 20px;
-      font-weight: bold;
-      text-shadow: 0 0 10px rgba(255,255,255,0.5);
-      z-index: 5;
-    }
-
-    #gameOver {
-      display: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255,255,255,0.95);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 20;
-      font-size: 24px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Snake 2025 — Neon Grid 3D</title>
+<style>
+:root{
+  --bg-dark:#ffffff; --grid-1:#e0e0e0; --neon:#00ff88; --neon-2:#00b36b; --accent:#ffd166;
+  --text:#001a09;
+}
+*{box-sizing:border-box}
+html,body{height:100%; margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, "Courier New", monospace;}
+body{
+  display:flex; align-items:center; justify-content:center; background:#ffffff;
+  color:var(--text); padding:18px;
+}
+#container{width:min(94vw,980px); display:flex; gap:18px; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
+#wrap{position:relative; width:min(86vw,580px);}
+canvas{display:block; width:100%; height:auto; border-radius:12px; box-shadow:0 18px 40px rgba(0,0,0,0.1); background:#ffffff; border:1px solid rgba(0,255,136,0.05);}
+.panel{background:#f9f9f9; padding:14px; border-radius:10px; border:1px solid rgba(0,255,136,0.1); color:var(--text); width:320px; box-shadow:0 8px 20px rgba(0,0,0,0.08)}
+.controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; justify-content:center}
+button,select{background:rgba(0,255,136,0.06); color:var(--text); border:1px solid rgba(0,255,136,0.2); padding:8px 12px; border-radius:8px; cursor:pointer; transition:0.2s}
+button:hover{transform:translateY(-3px); box-shadow:0 0 12px rgba(0,255,136,0.25)}
+.header{display:flex; align-items:center; gap:12px; margin-bottom:10px}
+.title{font-size:1.4rem; color:#00b36b;}
+.overlay{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:86%; max-width:420px; z-index:30}
+.hidden{display:none}
+#hud{display:flex; justify-content:space-between; gap:8px; align-items:center; margin-top:12px; width:320px}
+#scoreBox{font-family:inherit}
+.muted{font-size:12px; color:rgba(0,0,0,0.5); margin-top:10px; text-align:center}
+@media(max-width:720px){ #wrap{width:94vw} .panel{width:94vw} }
+</style>
 </head>
-
 <body>
-  <div id="menu">
-    <h1>🐍 Snake 3D — 2025 Edition</h1>
-    <p>Choose difficulty and start your journey!</p>
-    <button onclick="startGame('easy')">Easy</button>
-    <button onclick="startGame('medium')">Medium</button>
-    <button onclick="startGame('hard')">Hard</button>
+<div id="container">
+  <div id="wrap">
+    <canvas id="canvas" width="560" height="560"></canvas>
+
+    <div class="overlay panel" id="menuPanel">
+      <div class="header"><div class="title">🐍 Snake 2025 — Neon Grid</div></div>
+      <div style="text-align:center;">Modern white grid — optimized for web & mobile</div>
+      <div class="controls" style="margin-top:14px">
+        <div>
+          <label>Difficulty</label>
+          <select id="difficulty">
+            <option value="130">Easy</option>
+            <option value="90" selected>Medium</option>
+            <option value="60">Hard</option>
+          </select>
+        </div>
+        <div>
+          <label>Snake style</label>
+          <select id="snakeColor">
+            <option value="#111111">Dark Snake</option>
+            <option value="#00ff88">Neon Green</option>
+            <option value="#66fff0">Cyan</option>
+            <option value="#ff79d1">Magenta</option>
+            <option value="#ffd166">Amber</option>
+          </select>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="startBtn">▶ Start</button>
+        <button id="leaderBtn">🏆 Leaderboard</button>
+      </div>
+      <div class="muted">Arrow keys or swipe. P to pause.</div>
+    </div>
+
+    <div class="overlay panel hidden" id="leaderPanel">
+      <h3 style="text-align:center;margin:4px 0 8px 0">Leaderboard — Local (Top 10)</h3>
+      <ol id="leader" style="padding-left:18px; max-height:220px; overflow:auto"></ol>
+      <div class="controls">
+        <button id="backBtn">Back</button>
+        <button id="clearBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="overlay panel hidden" id="overPanel">
+      <h3 style="text-align:center;margin:4px 0 8px 0">💥 Game Over</h3>
+      <div id="finalText" style="text-align:center; margin-bottom:8px"></div>
+      <div class="controls">
+        <button id="replayBtn">🔁 Play Again</button>
+        <button id="homeBtn">🏠 Menu</button>
+      </div>
+    </div>
   </div>
 
-  <div id="scoreboard" class="hidden">
-    Score: <span id="score">0</span> | High: <span id="highscore">0</span>
+  <div class="panel">
+    <div style="font-weight:700;">Controls & Info</div>
+    <div class="controls" style="justify-content:flex-start">
+      <button id="pauseBtn">⏸ Pause</button>
+      <button id="musicBtn">🎵 Music: On</button>
+      <button id="muteBtn">🔈 Mute FX</button>
+    </div>
+    <div id="hud"><div id="scoreBox">Score: 0 | High: 0</div></div>
   </div>
+</div>
 
-  <canvas id="game" width="400" height="400"></canvas>
+<audio id="sfxEat" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.wav"></audio>
+<audio id="sfxCrash" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.wav"></audio>
+<audio id="sfxClick" src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.wav"></audio>
+<audio id="bgMusic" loop src="https://assets.mixkit.co/music/preview/mixkit-80s-retrowave-1121.mp3"></audio>
 
-  <div id="gameOver" class="hidden">
-    <h2>💀 Game Over!</h2>
-    <p>Your Score: <span id="finalScore"></span></p>
-    <button onclick="restart()">Restart</button>
-  </div>
+<script>
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let snake=[],food=null,dir=null,running=false,paused=false,score=0,high=Number(localStorage.getItem('snake_high')||0);
+let interval=100,box=20,grid=28,particles=[];
+const sEat=document.getElementById('sfxEat'),sCrash=document.getElementById('sfxCrash'),bg=document.getElementById('bgMusic');
+const scoreBox=document.getElementById('scoreBox');
+function rand(){const x=Math.floor(Math.random()*grid)*box;const y=Math.floor(Math.random()*grid)*box;return{x,y}}
+function reset(){snake=[{x:280,y:280}],food=rand();dir=null;score=0;running=true;paused=false;particles=[]}
+function step(){
+ if(!running||paused)return;
+ let h={...snake[0]};if(dir==='LEFT')h.x-=box;if(dir==='RIGHT')h.x+=box;if(dir==='UP')h.y-=box;if(dir==='DOWN')h.y+=box;
+ if(h.x<0||h.y<0||h.x>=canvas.width||h.y>=canvas.height||snake.some((s,i)=>i>0&&s.x===h.x&&s.y===h.y)){sCrash.play();running=false;showOver();return;}
+ if(h.x===food.x&&h.y===food.y){sEat.play();score++;food=rand();}else snake.pop();snake.unshift(h);
+}
+function drawSnake(){
+ for(let i=0;i<snake.length;i++){
+  const s=snake[i],isH=i===0;
+  const g=ctx.createLinearGradient(s.x,s.y,s.x+box,s.y+box);
+  g.addColorStop(0,"#111");g.addColorStop(1,"#333");
+  ctx.fillStyle=g;
+  ctx.fillRect(s.x+1,s.y+1,box-2,box-2);
+  if(isH){ctx.fillStyle="#000";ctx.fillRect(s.x+5,s.y+5,box-10,box-10);}
+ }
+}
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.strokeStyle="#eee";ctx.globalAlpha=0.2;
+ for(let i=0;i<canvas.width;i+=box){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,canvas.height);ctx.stroke();}
+ for(let j=0;j<canvas.height;j+=box){ctx.beginPath();ctx.moveTo(0,j);ctx.lineTo(canvas.width,j);ctx.stroke();}
+ ctx.globalAlpha=1;
+ ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(food.x+box/2,food.y+box/2,box/2.6,0,Math.PI*2);ctx.fill();
+ drawSnake();
+ scoreBox.innerText=`Score: ${score} | High: ${high}`;
+ if(running)requestAnimationFrame(draw);
+}
+function gameLoop(){if(running&&!paused){step();}setTimeout(gameLoop,interval);}
+function showOver(){
+ document.getElementById('overPanel').classList.remove('hidden');
+ if(score>high){high=score;localStorage.setItem('snake_high',high);}
+ document.getElementById('finalText').innerText=`Score: ${score}\nHigh: ${high}`;
+}
+document.getElementById('startBtn').onclick=()=>{reset();document.getElementById('menuPanel').classList.add('hidden');bg.play();running=true;draw();gameLoop();}
+document.getElementById('replayBtn').onclick=()=>{reset();document.getElementById('overPanel').classList.add('hidden');bg.play();draw();gameLoop();}
+document.addEventListener('keydown',e=>{
+ if(!running)return;
+ if(e.key==='ArrowLeft'&&dir!=='RIGHT')dir='LEFT';
+ if(e.key==='ArrowRight'&&dir!=='LEFT')dir='RIGHT';
+ if(e.key==='ArrowUp'&&dir!=='DOWN')dir='UP';
+ if(e.key==='ArrowDown'&&dir!=='UP')dir='DOWN';
+});
+</script>
 
-  <script>
-    // --- Snake Game Logic ---
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const box = 20;
-    let snake, food, direction, score, gameInterval, speed;
-    const scoreEl = document.getElementById("score");
-    const highEl = document.getElementById("highscore");
-    const menu = document.getElementById("menu");
-    const gameOverScreen = document.getElementById("gameOver");
-    const finalScore = document.getElementById("finalScore");
-    const board = document.getElementById("scoreboard");
-
-    highEl.innerText = localStorage.getItem("highScore2025") || 0;
-
-    function startGame(difficulty) {
-      speed = difficulty === 'easy' ? 150 : difficulty === 'medium' ? 100 : 70;
-      menu.classList.add("hidden");
-      board.classList.remove("hidden");
-      snake = [{ x: 9 * box, y: 10 * box }];
-      food = {
-        x: Math.floor(Math.random() * 19 + 1) * box,
-        y: Math.floor(Math.random() * 19 + 1) * box
-      };
-      direction = null;
-      score = 0;
-      document.addEventListener("keydown", changeDirection);
-      clearInterval(gameInterval);
-      gameInterval = setInterval(draw, speed);
-    }
-
-    function changeDirection(e) {
-      if (e.keyCode === 37 && direction !== "RIGHT") direction = "LEFT";
-      else if (e.keyCode === 38 && direction !== "DOWN") direction = "UP";
-      else if (e.keyCode === 39 && direction !== "LEFT") direction = "RIGHT";
-      else if (e.keyCode === 40 && direction !== "UP") direction = "DOWN";
-    }
-
-    function collision(newHead, snakeArray) {
-      return snakeArray.some(segment => segment.x === newHead.x && segment.y === newHead.y);
-    }
-
-    function draw() {
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw food
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = "#00ff99";
-      ctx.fillStyle = "#00ff99";
-      ctx.beginPath();
-      ctx.arc(food.x + box / 2, food.y + box / 2, box / 2, 0, 2 * Math.PI);
-      ctx.fill();
-
-      // Draw snake
-      ctx.shadowBlur = 0;
-      for (let i = 0; i < snake.length; i++) {
-        ctx.fillStyle = i === 0 ? "#000" : "#222"; // dark snake
-        ctx.fillRect(snake[i].x, snake[i].y, box - 2, box - 2);
-      }
-
-      let snakeX = snake[0].x;
-      let snakeY = snake[0].y;
-
-      if (direction === "LEFT") snakeX -= box;
-      if (direction === "UP") snakeY -= box;
-      if (direction === "RIGHT") snakeX += box;
-      if (direction === "DOWN") snakeY += box;
-
-      if (snakeX === food.x && snakeY === food.y) {
-        score++;
-        scoreEl.innerText = score;
-        food = {
-          x: Math.floor(Math.random() * 19 + 1) * box,
-          y: Math.floor(Math.random() * 19 + 1) * box
-        };
-      } else {
-        snake.pop();
-      }
-
-      let newHead = { x: snakeX, y: snakeY };
-
-      if (
-        snakeX < 0 ||
-        snakeY < 0 ||
-        snakeX >= canvas.width ||
-        snakeY >= canvas.height ||
-        collision(newHead, snake)
-      ) {
-        clearInterval(gameInterval);
-        endGame();
-        return;
-      }
-
-      snake.unshift(newHead);
-    }
-
-    function endGame() {
-      finalScore.innerText = score;
-      gameOverScreen.classList.remove("hidden");
-      board.classList.add("hidden");
-
-      let high = localStorage.getItem("highScore2025") || 0;
-      if (score > high) {
-        localStorage.setItem("highScore2025", score);
-        highEl.innerText = score;
-      }
-    }
-
-    function restart() {
-      gameOverScreen.classList.add("hidden");
-      menu.classList.remove("hidden");
-    }
-  </script>
-
-  <!-- ✅ FARCASTER SDK (LOADED LAST TO FIX "READY NOT CALLED") -->
-  <script>
-    window.addEventListener("load", async () => {
-      try {
-        const sdk = await import("https://cdn.jsdelivr.net/npm/@farcaster/frame-sdk@latest/dist/sdk.min.js");
-        sdk.actions.ready();
-        console.log("✅ Farcaster Ready signal sent");
-      } catch (e) {
-        console.warn("Farcaster SDK failed to load:", e);
-      }
-    });
-  </script>
+<!-- ✅ FARCASTER SDK READY FIX -->
+<script>
+(async()=>{
+ try{
+   const s=document.createElement("script");
+   s.src="https://cdn.jsdelivr.net/npm/@farcaster/frame-sdk@latest/dist/sdk.umd.js";
+   s.onload=()=>{if(window.frameSDK&&window.frameSDK.actions){window.frameSDK.actions.ready();console.log("✅ Farcaster ready() called");}};
+   document.body.appendChild(s);
+ }catch(e){console.error("SDK load fail",e);}
+})();
+</script>
 </body>
 </html>
