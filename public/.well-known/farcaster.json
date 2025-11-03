@@ -1,0 +1,21 @@
+
+{
+  "id": "snake-2025",
+  "name": "snake 2025",
+  "subtitle": "Play, connect, and climb the leaderboard",
+  "description": "Play the classic Snake with a futuristic twist. Compete with friends, climb the leaderboard, and show your skills — all inside Farcaster.",
+  "primaryCategory": "games",
+  "homeUrl": "https://snake-game-2esu.vercel.app",
+  "iconUrl": "https://snake-game-2esu.vercel.app/icon.png",
+  "imageUrl": "https://snake-game-2esu.vercel.app/image.png",
+  "screenshotUrls": [
+    "https://snake-game-2esu.vercel.app/screenshot1.png"
+  ],
+  "splashImageUrl": "https://snake-game-2esu.vercel.app/splash.png",
+  "splashBackgroundColor": "#6200EA",
+  "version": "1.0.0",
+  "author": {
+    "name": "snake 2025 Dev Team",
+    "url": "https://snake-game-2esu.vercel.app"
+  }
+}
